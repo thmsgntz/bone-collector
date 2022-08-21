@@ -1,17 +1,25 @@
-
-use bevy::prelude::*;
 use crate::animations_handler::{AddAnimation, ChangeAnimation};
 use crate::creatures::skelly::Skelly;
 
+use bevy::prelude::*;
+
 pub(crate) mod skelly;
 
-const ENTITY_SPEED: f32 = 2.0;
-const ENTITY_SPEED_ROTATION: f32 = 0.1;
+// const ENTITY_SPEED: f32 = 2.0;
+// const ENTITY_SPEED_ROTATION: f32 = 0.1;
 
 pub trait CreatureTrait {
-    fn spawn(commands: Commands, asset_server: Res<AssetServer>, event_writer: EventWriter<AddAnimation>);
+    fn spawn(
+        commands: Commands,
+        asset_server: Res<AssetServer>,
+        event_writer: EventWriter<AddAnimation>,
+    );
 
-    fn update_animation(target: u32, index_animation: usize, event_writer: &mut EventWriter<ChangeAnimation>);
+    fn update_animation(
+        target: u32,
+        index_animation: usize,
+        event_writer: &mut EventWriter<ChangeAnimation>,
+    );
 }
 
 /// Player marker
@@ -46,14 +54,13 @@ impl From<usize> for CurrentAnimationIndex {
     }
 }
 
-
 pub enum TypeCreature {
     Skelly,
 }
 
 //#[derive(Bundle)]
 #[derive(Component)]
-pub struct Creature{
+pub struct Creature {
     pub type_creature: TypeCreature,
 
     /// index (in vec_animations)  of current animation being played
@@ -61,22 +68,21 @@ pub struct Creature{
 }
 
 impl Creature {
-    pub fn update_animation(&self, target: u32, index_animation: usize, event_writer: &mut EventWriter<ChangeAnimation>)
-    {
+    pub fn update_animation(
+        &self,
+        target: u32,
+        index_animation: usize,
+        event_writer: &mut EventWriter<ChangeAnimation>,
+    ) {
         match self.type_creature {
             TypeCreature::Skelly => {
-                info!("Calling update_animation skelly");
                 Skelly::update_animation(target, index_animation, event_writer);
             }
         }
     }
-
 }
-
-
 
 //#[bundle]
 //pub transform: PbrBundle,
 // ajouter Transform
 // ajouter scene
-

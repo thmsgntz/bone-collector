@@ -37,7 +37,7 @@ impl From<usize> for SkellyAnimationId {
     }
 }
 
-impl Into<usize> for SkellyAnimationId {
+/*impl Into<usize> for SkellyAnimationId {
     fn into(self) -> usize {
         match self {
             SkellyAnimationId::Spawn => 0,
@@ -54,7 +54,7 @@ impl Into<usize> for SkellyAnimationId {
             SkellyAnimationId::None => 11,
         }
     }
-}
+}*/
 
 const SKELLY_ANIM_DURATION_SPAWN: f32 = 1.30;
 const SKELLY_ANIM_DURATION_IDLE: f32 = 1.58;
@@ -68,9 +68,16 @@ const SKELLY_ANIM_DURATION_HIT: f32 = 0.62;
 const SKELLY_ANIM_DURATION_DIE: f32 = 1.06;
 const SKELLY_ANIM_DURATION_HANGED: f32 = 1.58;
 
-impl Into<CurrentAnimationIndex> for SkellyAnimationId {
+/*impl Into<CurrentAnimationIndex> for SkellyAnimationId {
     fn into(self) -> CurrentAnimationIndex {
-        CurrentAnimationIndex(self.into())
+        CurrentAnimationIndex(self)
+    }
+}*/
+
+impl From<SkellyAnimationId> for CurrentAnimationIndex {
+    fn from(id: SkellyAnimationId) -> Self {
+        let usi = id as usize;
+        CurrentAnimationIndex(usi)
     }
 }
 
@@ -121,7 +128,9 @@ impl CreatureTrait for Skelly {
             })
             .insert(Creature {
                 type_creature: TypeCreature::Skelly,
-                current_animation_index: SkellyAnimationId::Idle.into(),
+                current_animation_index: CurrentAnimationIndex::from(
+                    SkellyAnimationId::Idle as usize,
+                ),
             })
             .insert(Player)
             .id();
@@ -138,11 +147,6 @@ impl CreatureTrait for Skelly {
         index_animation: usize,
         event_writer: &mut EventWriter<ChangeAnimation>,
     ) {
-        info!(
-            "calling with {:#?} {}",
-            SkellyAnimationId::from(index_animation),
-            index_animation
-        );
         let mut new_animation = SkellyAnimationId::Idle;
         let mut repeat = false;
 
@@ -169,7 +173,7 @@ impl CreatureTrait for Skelly {
 
         event_writer.send(ChangeAnimation {
             target,
-            index: new_animation.into(),
+            index: new_animation as usize,
             repeat,
         });
     }
@@ -183,7 +187,7 @@ fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandl
     for i in 0..11 {
         let id = SkellyAnimationId::from(i as usize);
         let handle = asset_server.load(format!("{}#Animation{}", scene_path, id as usize).as_str());
-        hm_animations.insert(id.into(), id.get_duration(), handle);
+        hm_animations.insert(id as usize, id.get_duration(), handle);
     }
 
     SceneHandle {

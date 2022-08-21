@@ -1,10 +1,8 @@
-use crate::creatures::{Creature};
+use crate::creatures::Creature;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use std::borrow::{BorrowMut};
-use std::fmt::Pointer;
+use std::borrow::BorrowMut;
 use std::time::Duration;
-
 
 pub struct AnimationHandler;
 impl Plugin for AnimationHandler {
@@ -52,8 +50,6 @@ pub struct RemoveAnimation {
     pub entity_id: u32,
 }
 
-
-
 /// Ressource qui contient un vecteur de SceneHandle
 /// qui définit tous les animations des créatures
 /// Ajouté au world:  app.insert_resource::<VecSceneHandle>(Default::default())
@@ -72,7 +68,9 @@ impl HashMapAnimationClip {
         self.0.get(&ind)
     }
 
-    pub fn new() -> Self {HashMapAnimationClip(HashMap::new())}
+    pub fn new() -> Self {
+        HashMapAnimationClip(HashMap::new())
+    }
 
     pub fn insert(
         &mut self,
@@ -137,12 +135,8 @@ pub struct AnimationEntityLink(pub Entity);
 
 fn get_top_parent(mut curr_entity: Entity, parent_query: &Query<&Parent>) -> Entity {
     //Loop up all the way to the top parent
-    loop {
-        if let Ok(parent) = parent_query.get(curr_entity) {
-            curr_entity = parent.get();
-        } else {
-            break;
-        }
+    while let Ok(parent) = parent_query.get(curr_entity) {
+        curr_entity = parent.get();
     }
     curr_entity
 }
@@ -218,7 +212,6 @@ fn update_animation(
                         // on retrouve ses animations SceneHandler
                         debug!("  > scene_handler trouvé!");
                         if let Ok(mut player) = query_player.get_mut(animation_link.0) {
-
                             let (duration, animation) =
                                 &scene_handler.vec_animations.get_pair(event.index).unwrap();
 
@@ -231,14 +224,14 @@ fn update_animation(
                                 for mut stopwatch in query_stopwatch.iter_mut() {
                                     if stopwatch.creature_entity_id == Some(entity.id()) {
                                         stopwatch.index_animation = event.index;
-                                        stopwatch.time.set_duration(Duration::from_secs_f32(*duration));
+                                        stopwatch
+                                            .time
+                                            .set_duration(Duration::from_secs_f32(*duration));
                                         debug!("Setting stopwatch!");
                                     }
                                 }
                             }
                             current_animation_index.0 = event.index;
-
-
                         }
                     }
                 }
@@ -247,9 +240,9 @@ fn update_animation(
     }
 }
 
-
 /// Utiliser pour trouver la durée d'une AnimationClip
 /// Ne fonctionne que pour le premier élément ajouté dans VecSceneHandle, après 'done' > 2.
+/*
 fn inspect_animation_clip(
     assets_handle: Res<Assets<AnimationClip>>,
     scene_handlers: Res<VecSceneHandle>,
@@ -275,14 +268,14 @@ fn inspect_animation_clip(
     }
 
 }
-
+*/
 
 /// Récupère les stopwatch
 /// Met à jour les ticks des stopwatch
 /// Si une stopwacth est terminée :
 ///     Une animation est terminée
 ///     Récupérer la créature de l'animation et appeler sa fonction update_animation() pour choisir la prochaine animation
-fn checker_animation_duration (
+fn checker_animation_duration(
     query_entity: Query<(Entity, &Creature)>,
     mut query_stopwatch: Query<&mut AnimationStopWatch>,
     mut event_writer: EventWriter<ChangeAnimation>,
@@ -293,12 +286,19 @@ fn checker_animation_duration (
 
         if stopwatch.is_over() {
             // play new animation for the current entity
-            debug!("Timer finished for entity {}", stopwatch.creature_entity_id.unwrap());
-            stopwatch.time.reset();  // en attendant que update_animation vienne faire le travail
+            debug!(
+                "Timer finished for entity {}",
+                stopwatch.creature_entity_id.unwrap()
+            );
+            stopwatch.reset_timer(); // en attendant que update_animation vienne faire le travail
 
             for (entity, creature) in query_entity.iter() {
                 if Some(entity.id()) == stopwatch.creature_entity_id {
-                    creature.update_animation(stopwatch.creature_entity_id.unwrap(), stopwatch.index_animation, event_writer.borrow_mut());
+                    creature.update_animation(
+                        stopwatch.creature_entity_id.unwrap(),
+                        stopwatch.index_animation,
+                        event_writer.borrow_mut(),
+                    );
                 }
             }
         }
@@ -315,13 +315,11 @@ fn add_animation(
 
         vec_scene_handlers.0.push(event.scene_handler.clone());
 
-        commands.spawn().insert(
-            AnimationStopWatch {
-                creature_entity_id: event.scene_handler.creature_entity_id,
-                index_animation: 0,
-                time: Timer::new(Duration::from_secs(1000.0 as u64), false)
-            }
-        );
+        commands.spawn().insert(AnimationStopWatch {
+            creature_entity_id: event.scene_handler.creature_entity_id,
+            index_animation: 0,
+            time: Timer::new(Duration::from_secs(1000.0 as u64), false),
+        });
     }
 }
 
@@ -334,7 +332,6 @@ fn remove_animation(
         found = false;
         for i in 0..vec_scene_handlers.0.len() {
             if !found && vec_scene_handlers.0[i].creature_entity_id == Some(event.entity_id) {
-
                 debug!("Remove_animation: entity found, removing.");
                 found = true;
                 vec_scene_handlers.0.swap_remove(i);

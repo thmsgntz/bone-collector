@@ -18,7 +18,6 @@ mod settings {
 }
 
 fn setup_light(mut commands: Commands) {
-
     // light
     commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(3.0, 8.0, 5.0),
@@ -26,8 +25,20 @@ fn setup_light(mut commands: Commands) {
     });
 }
 
+fn setup_floor(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let size = 5.0;
 
-
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane { size })),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        transform: Transform::from_xyz(size / 2.0, 0.0, size / 2.0),
+        ..default()
+    });
+}
 
 fn main() {
     App::new()
@@ -41,16 +52,22 @@ fn main() {
             present_mode: PresentMode::Mailbox,
             ..Default::default()
         })
+
+        // .add_plugin(LogDiagnosticsPlugin::default())
+        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+
         .insert_resource(LogSettings {
-            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug".into(),
+            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info".into(),
             level: bevy::log::Level::DEBUG,
         })
+
+
         .add_plugins(DefaultPlugins)
         .add_plugin(camera::CameraPlugin)
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)
-        .add_system(setup_light)
+        .add_startup_system(setup_light)
+        .add_startup_system(setup_floor)
 
         .run();
 }
-
