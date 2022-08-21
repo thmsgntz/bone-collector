@@ -1,9 +1,11 @@
 use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
 use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature};
+use crate::directions;
 use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
-enum SkellyAnimationId {
+pub(crate) enum SkellyAnimationId {
     Spawn,         // ?
     Idle,          // duration: 1.5800002
     LookingAround, // duration: 3.1800003
@@ -115,22 +117,55 @@ impl CreatureTrait for Skelly {
             .insert_bundle(PbrBundle {
                 transform: Transform {
                     translation: Vec3::new(0.0, 0.0, 0.0),
-                    scale: Vec3::ONE * 0.6,
-                    ..default()
+                    rotation: Quat::from_rotation_y(directions::Direction::Up.get_angle()),
+                    scale: Vec3::ONE,
                 },
                 ..default()
             })
             .with_children(|parent| {
                 parent.spawn_bundle(SceneBundle {
                     scene: skelly_scene_handle.handle.clone(),
+                    transform: Transform {
+                        translation: Default::default(),
+                        rotation: Default::default(),
+                        scale: Vec3::ONE * 0.6,
+                    },
                     ..default()
                 });
             })
+            .with_children(|children| {
+                children
+                    .spawn()
+                    .insert(Collider::cuboid(0.1, 0.7, 0.1))
+                    .insert_bundle(PbrBundle {
+                        transform: Transform {
+                            translation: Vec3::new(0.0, 1.0, 0.0),
+                            rotation: Quat::from_rotation_y(
+                                directions::Direction::Left.get_angle(),
+                            ), // Direction::Left
+                            scale: Vec3::ONE,
+                        },
+                        ..Default::default()
+                    });
+            })
+            .insert(RigidBody::Dynamic)
+            .insert(
+                LockedAxes::ROTATION_LOCKED_X
+                    | LockedAxes::ROTATION_LOCKED_Z
+                    | LockedAxes::ROTATION_LOCKED_Y,
+            )
+            .insert(Velocity {
+                linvel: Vec3::new(0.0, 0.0, 0.0),
+                angvel: Vec3::new(0.0, 0.0, 0.0),
+            })
             .insert(Creature {
                 type_creature: TypeCreature::Skelly,
+                direction: directions::Direction::Up,
+                direction_vec3: directions::Direction::Up.get_vec3(),
                 current_animation_index: CurrentAnimationIndex::from(
                     SkellyAnimationId::Idle as usize,
                 ),
+                can_move: false,
             })
             .insert(Player)
             .id();
@@ -176,6 +211,50 @@ impl CreatureTrait for Skelly {
             index: new_animation as usize,
             repeat,
         });
+    }
+
+    /// Returns true is animation is Idle / Walk / Run
+    fn can_move(animation_index: usize) -> bool {
+        matches! {
+            SkellyAnimationId::from(animation_index),
+            SkellyAnimationId::Idle
+            | SkellyAnimationId::Walk
+            | SkellyAnimationId::Run
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_can_move() {
+        let mut creature = Creature {
+            type_creature: TypeCreature::Skelly,
+            direction: directions::Direction::Up,
+            direction_vec3: Default::default(),
+            current_animation_index: CurrentAnimationIndex(SkellyAnimationId::Idle as usize),
+            can_move: false,
+        };
+
+        assert_eq!(
+            true,
+            Skelly::can_move(creature.current_animation_index.0 as usize)
+        );
+
+        creature.current_animation_index = CurrentAnimationIndex(SkellyAnimationId::Spawn as usize);
+        assert_eq!(
+            false,
+            Skelly::can_move(creature.current_animation_index.0 as usize)
+        );
+
+        creature.current_animation_index =
+            CurrentAnimationIndex(SkellyAnimationId::LookingAround as usize);
+        assert_eq!(
+            false,
+            Skelly::can_move(creature.current_animation_index.0 as usize)
+        );
     }
 }
 

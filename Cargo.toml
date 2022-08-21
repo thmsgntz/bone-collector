@@ -12,3 +12,4 @@ opt-level = 1
 
 [dependencies]
 bevy = "0.8"
+bevy_rapier3d = { version = "0.16.1", features = [ "simd-stable", "debug-render" ] }

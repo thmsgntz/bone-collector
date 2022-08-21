@@ -202,11 +202,10 @@ fn update_animation(
     for event in events.iter() {
         // retrouver l'entity
         debug!("Event found! {:#?}", event);
-        for (entity, animation_link, creature) in query_entity.iter_mut() {
+        for (entity, animation_link, mut creature) in query_entity.iter_mut() {
             if entity.id() == event.target {
                 // on a retrouvé le player associé à l'entité
                 debug!("  > entity trouvé!");
-                let mut current_animation_index = creature.current_animation_index;
                 for scene_handler in &scene_handlers.0 {
                     if scene_handler.creature_entity_id == Some(entity.id()) {
                         // on retrouve ses animations SceneHandler
@@ -231,7 +230,7 @@ fn update_animation(
                                     }
                                 }
                             }
-                            current_animation_index.0 = event.index;
+                            creature.current_animation_index.0 = event.index;
                         }
                     }
                 }
