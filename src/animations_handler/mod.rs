@@ -133,6 +133,12 @@ pub struct SceneHandle {
 #[derive(Component)]
 pub struct AnimationEntityLink(pub Entity);
 
+impl AnimationEntityLink {
+    fn get(&self) -> Entity {
+        self.0
+    }
+}
+
 fn get_top_parent(mut curr_entity: Entity, parent_query: &Query<&Parent>) -> Entity {
     //Loop up all the way to the top parent
     while let Ok(parent) = parent_query.get(curr_entity) {
@@ -210,7 +216,7 @@ fn update_animation(
                     if scene_handler.creature_entity_id == Some(entity.id()) {
                         // on retrouve ses animations SceneHandler
                         debug!("  > scene_handler trouvé!");
-                        if let Ok(mut player) = query_player.get_mut(animation_link.0) {
+                        if let Ok(mut player) = query_player.get_mut(animation_link.get()) {
                             let (duration, animation) =
                                 &scene_handler.vec_animations.get_pair(event.index).unwrap();
 

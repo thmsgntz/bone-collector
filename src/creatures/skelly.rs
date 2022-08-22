@@ -136,7 +136,7 @@ impl CreatureTrait for Skelly {
             .with_children(|children| {
                 children
                     .spawn()
-                    .insert(Collider::cuboid(0.1, 0.7, 0.1))
+                    .insert(Collider::cuboid(0.1, 0.9, 0.1))
                     .insert_bundle(PbrBundle {
                         transform: Transform {
                             translation: Vec3::new(0.0, 1.0, 0.0),
@@ -168,6 +168,7 @@ impl CreatureTrait for Skelly {
                 can_move: false,
             })
             .insert(Player)
+            .insert(Name::new("Skelly"))
             .id();
 
         skelly_scene_handle.creature_entity_id = Some(skelly_id.id());

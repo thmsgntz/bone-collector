@@ -6,6 +6,7 @@ mod directions;
 use bevy::log::LogSettings;
 use bevy::prelude::*;
 use bevy::window::PresentMode;
+use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
 mod settings {
@@ -21,10 +22,12 @@ mod settings {
 
 fn setup_light(mut commands: Commands) {
     // light
-    commands.spawn_bundle(PointLightBundle {
-        transform: Transform::from_xyz(3.0, 8.0, 5.0),
-        ..default()
-    });
+    commands
+        .spawn_bundle(PointLightBundle {
+            transform: Transform::from_xyz(3.0, 8.0, 5.0),
+            ..default()
+        })
+        .insert(Name::new("PointLight"));
 }
 
 fn setup_floor(
@@ -38,15 +41,17 @@ fn setup_floor(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Plane { size })),
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-            transform: Transform::from_xyz(size / 2.0, 0.0, size / 2.0),
             ..default()
         })
         .insert(RigidBody::Fixed)
-        .insert(Collider::cuboid(size / 2.0, 0.1, size / 2.0));
+        .insert(Collider::cuboid(size / 2.0, 0.1, size / 2.0))
+        .insert(Name::new("Floor"));
 }
 
 fn main() {
     App::new()
+
+        /* Window */
         .insert_resource(Msaa { samples: 4 })
         .insert_resource(WindowDescriptor {
             title: settings::NAME.parse().unwrap(),
@@ -58,17 +63,28 @@ fn main() {
             ..Default::default()
         })
 
+        /* Diagnostics */
         // .add_plugin(LogDiagnosticsPlugin::default())
         // .add_plugin(FrameTimeDiagnosticsPlugin::default())
 
+        /* Login*/
         .insert_resource(LogSettings {
             filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info".into(),
             level: bevy::log::Level::DEBUG,
         })
+
+        /* DefaultPlugins */
         .add_plugins(DefaultPlugins)
+
+        /* EGUI info */
+        .add_plugin(WorldInspectorPlugin::new())
+        //.register_type::<Creature>()
+
+        /* Rapier */
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
 
+        /* My stuff */
         .add_plugin(camera::CameraPlugin)
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)

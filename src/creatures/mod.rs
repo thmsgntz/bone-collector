@@ -1,5 +1,5 @@
 use crate::animations_handler::{AddAnimation, ChangeAnimation};
-use crate::creatures::skelly::Skelly;
+use crate::creatures::skelly::{Skelly, SkellyAnimationId};
 use bevy::math::vec3;
 
 use crate::directions;
@@ -49,14 +49,26 @@ fn spawn_skelly(
 
 //#[derive(Bundle, Clone)]
 
-#[derive(Component, Copy, Clone)]
 /// Contient l'index de l'animation en cours
 /// Mis à jour par animations_handler:update_animation
+#[derive(Component, Copy, Clone, PartialEq, Eq)]
 pub struct CurrentAnimationIndex(pub usize);
+
+impl PartialEq<SkellyAnimationId> for CurrentAnimationIndex {
+    fn eq(&self, other: &SkellyAnimationId) -> bool {
+        self.get() == *other as usize
+    }
+}
 
 impl From<usize> for CurrentAnimationIndex {
     fn from(a: usize) -> Self {
         Self(a)
+    }
+}
+
+impl CurrentAnimationIndex {
+    fn get(&self) -> usize {
+        self.0
     }
 }
 
@@ -90,8 +102,21 @@ impl Creature {
     }
 }
 
-fn keyboard_control(
+fn send_new_animation(
+    target_entity: u32,
+    animation_index: usize,
+    do_repeat: bool,
     mut event_writer: EventWriter<ChangeAnimation>,
+) {
+    event_writer.send(ChangeAnimation {
+        target: target_entity,
+        index: animation_index,
+        repeat: do_repeat,
+    });
+}
+
+fn keyboard_control(
+    event_writer: EventWriter<ChangeAnimation>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query_player: Query<(Entity, &mut Transform, &mut Velocity, &mut Creature), With<Player>>,
 ) {
@@ -123,7 +148,21 @@ fn keyboard_control(
     {
         // Returns if vector_direction is 0
         if vector_direction == Vec3::ZERO {
-            // TODO: if the player.currentanimation was walking, then idle
+            if player_creature.current_animation_index == SkellyAnimationId::Walk {
+                send_new_animation(
+                    entity.id(),
+                    SkellyAnimationId::Idle as usize,
+                    true,
+                    event_writer,
+                );
+                /*
+                event_writer.send(ChangeAnimation {
+                    target: entity.id(),
+                    index: SkellyAnimationId::Idle as usize,
+                    repeat: true,
+                });*/
+            }
+
             player_velocity.linvel = vec3(0.0, player_velocity.linvel.y, 0.0);
             return;
         }
@@ -154,13 +193,13 @@ fn keyboard_control(
         };
         player_transform.rotation = rotation;
 
-        // TODO: better comparison please
-        if player_creature.current_animation_index.0 != skelly::SkellyAnimationId::Walk as usize {
-            event_writer.send(ChangeAnimation {
-                target: entity.id(),
-                index: skelly::SkellyAnimationId::Walk as usize,
-                repeat: true,
-            });
+        if player_creature.current_animation_index != SkellyAnimationId::Walk {
+            send_new_animation(
+                entity.id(),
+                SkellyAnimationId::Walk as usize,
+                true,
+                event_writer,
+            );
         }
     }
 }
