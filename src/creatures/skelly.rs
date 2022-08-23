@@ -4,6 +4,12 @@ use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+pub static GLTF_PATH_FULL_BODY: &str = "models/full_body/scene.gltf";
+pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
+pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
+pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
+pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
+
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
     Spawn,         // ?
@@ -84,7 +90,7 @@ impl From<SkellyAnimationId> for CurrentAnimationIndex {
 }
 
 impl SkellyAnimationId {
-    fn get_duration(&self) -> f32 {
+    pub(crate) fn get_duration(&self) -> f32 {
         match self {
             SkellyAnimationId::Idle => SKELLY_ANIM_DURATION_IDLE,
             SkellyAnimationId::LookingAround => SKELLY_ANIM_DURATION_LOOKING_AROUND,
@@ -109,7 +115,8 @@ impl CreatureTrait for Skelly {
         asset_server: Res<AssetServer>,
         mut event_writer: EventWriter<AddAnimation>,
     ) {
-        let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
+        // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
+        let mut skelly_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY);
 
         // Skeleton
         let skelly_id = commands
