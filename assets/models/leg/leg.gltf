@@ -1575,9 +1575,9 @@
     ],
     "images" : [
         {
-            "mimeType" : "image/jpeg",
+            "mimeType" : "image/png",
             "name" : "rpg_albedo",
-            "uri" : "rpg_albedo.jpg"
+            "uri" : "rpg_albedo.png"
         }
     ],
     "skins" : [

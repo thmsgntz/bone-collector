@@ -5,11 +5,11 @@ mod directions;
 
 use bevy::log::LogSettings;
 use bevy::prelude::*;
+use bevy::window::PresentMode;
 
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 use crate::animations_handler::{AddAnimation, HashMapAnimationClip, SceneHandle};
-use crate::creatures::skelly;
 use crate::creatures::skelly::SkellyAnimationId;
 
 mod settings {
@@ -51,56 +51,6 @@ fn setup_floor(
         .insert(Name::new("Floor"));
 }
 
-fn spawn_bone(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut event_writer: EventWriter<AddAnimation>,
-) {
-    let scene_path = skelly::GLTF_PATH_BONE;
-    let asset_scene_handle = asset_server.load(format!("{}{}", scene_path, "#Scene0").as_str());
-
-    let mut hm_animations = HashMapAnimationClip::new();
-
-    for i in 0..1 {
-        let id = i;
-        let handle = asset_server.load(format!("{}#Animation{}", scene_path, id as usize).as_str());
-        hm_animations.insert(id as usize, SkellyAnimationId::Idle.get_duration(), handle);
-    }
-
-    let mut scene = SceneHandle {
-        handle: asset_scene_handle,
-        vec_animations: hm_animations,
-        creature_entity_id: None,
-    };
-
-    let bone_id = commands.spawn()
-        .insert_bundle(PbrBundle {
-            transform: Transform {
-                translation: Vec3::new(2.0, 0.0, 2.0),
-                rotation: Default::default(),
-                scale: Vec3::ONE,
-            },
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn_bundle(SceneBundle {
-                scene: scene.handle.clone(),
-                transform: Transform {
-                    translation: Default::default(),
-                    rotation: Default::default(),
-                    scale: Vec3::ONE * 1.0,
-                },
-                ..default()
-            });
-        }).id();
-
-    scene.creature_entity_id = Some(bone_id.id());
-
-    event_writer.send(AddAnimation {
-        scene_handler: scene,
-    });
-}
-
 fn main() {
     App::new()
 
@@ -112,7 +62,7 @@ fn main() {
             height: settings::WINDOW_HEIGHT,
             position: WindowPosition::At(Vec2::new(settings::WINDOW_POSITION_X, settings::WINDOW_POSITION_Y)),
             mode: settings::WINDOW_MODE,
-            //present_mode: PresentMode::Mailbox,
+            present_mode: PresentMode::Mailbox,
             ..Default::default()
         })
 
@@ -143,7 +93,6 @@ fn main() {
         .add_plugin(creatures::CreaturePlugin)
         .add_startup_system(setup_light)
         .add_startup_system(setup_floor)
-        .add_startup_system(spawn_bone)
 
         .run();
 }

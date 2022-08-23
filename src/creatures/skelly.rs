@@ -1,14 +1,8 @@
 use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
-use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature};
+use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, GLTF_PATH_FULL_BODY, Player, TypeCreature};
 use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-
-pub static GLTF_PATH_FULL_BODY: &str = "models/full_body/scene.gltf";
-pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
-pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
-pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
-pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
@@ -182,6 +176,8 @@ impl CreatureTrait for Skelly {
 
         event_writer.send(AddAnimation {
             scene_handler: skelly_scene_handle,
+            target: Some(skelly_id.id()),
+            start_animation: true
         });
     }
 
@@ -281,5 +277,6 @@ fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandl
         handle: asset_scene_handle,
         vec_animations: hm_animations,
         creature_entity_id: None,
+        type_creature: TypeCreature::Skelly,
     }
 }

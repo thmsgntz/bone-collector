@@ -1,10 +1,19 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
+use crate::creatures::Player;
+
+/// camera distance from the player
+#[derive(Reflect, Component, Default)]
+#[reflect(Component)]
+pub(crate) struct ShiftFromPlayer(f32);
 
 pub(crate) struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup)
+            .insert_resource::<ShiftFromPlayer>(ShiftFromPlayer{0: 5.0})
+
         //    .add_startup_system(draw_repere)
+            .add_system(camera_following_player)
         ;
     }
 }
@@ -19,11 +28,31 @@ fn setup(mut commands: Commands) {
             }
             .into(),
             transform: Transform::from_xyz(-5.0, 5.0, -5.0)
-                .looking_at(Vec3::new(4.0, 0.0, 4.0), Vec3::Y),
+                .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         })
         .insert(Name::new("Camera 3D"));
 }
+
+fn camera_following_player (
+    shift_value: Res<ShiftFromPlayer>,
+    mut query_camera: Query<&mut Transform, (With<Camera3d>, Without<Player>)>,
+    mut query_player: Query<&Transform, (With<Player>, Without<Camera3d>)>,
+) {
+    if let Ok(player_transform) = query_player.get_single_mut() {
+        let mut camera_transform = query_camera.get_single_mut().expect("Error while querying camera");
+        let player_translation = player_transform.translation;
+
+        let shift = shift_value.0;
+
+        *camera_transform = Transform::from_xyz(
+            player_translation.x - shift,
+            camera_transform.translation.y,
+            player_translation.z - shift,
+        ).looking_at(player_translation, Vec3::Y);
+    }
+}
+
 /*
 fn draw_repere(
     mut commands: Commands,
