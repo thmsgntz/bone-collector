@@ -2,6 +2,7 @@ mod animations_handler;
 mod camera;
 mod creatures;
 mod directions;
+mod inventory;
 
 use bevy::log::LogSettings;
 use bevy::prelude::*;
@@ -81,7 +82,6 @@ fn main() {
 
         /* EGUI info */
         .add_plugin(WorldInspectorPlugin::new())
-        //.register_type::<Creature>()
 
         /* Rapier */
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
@@ -91,6 +91,7 @@ fn main() {
         .add_plugin(camera::CameraPlugin)
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)
+        .add_plugin(inventory::InventoryPlugin)
         .add_startup_system(setup_light)
         .add_startup_system(setup_floor)
 

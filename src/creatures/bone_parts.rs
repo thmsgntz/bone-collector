@@ -3,6 +3,7 @@ use crate::creatures::{
     Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE, GLTF_PATH_CHEST,
     GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
+use crate::inventory::Pickupable;
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use std::borrow::BorrowMut;
@@ -199,6 +200,7 @@ fn spawn_part(
                     });
                 })
                 .insert(BoneTag)
+                .insert(Pickupable)
                 .insert(Creature {
                     type_creature: type_creature.clone(),
                     direction: directions::Direction::Up,

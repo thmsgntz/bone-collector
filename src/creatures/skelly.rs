@@ -5,6 +5,7 @@ use crate::creatures::{
 use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use crate::inventory::Inventory;
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
@@ -171,6 +172,7 @@ impl CreatureTrait for Skelly {
                 can_move: false,
             })
             .insert(Player)
+            .insert(Inventory::default())
             .insert(Name::new("Skelly"))
             .id();
 
