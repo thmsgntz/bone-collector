@@ -218,11 +218,15 @@ fn update_animation(
                 // on a retrouvé le player associé à l'entité
                 debug!("  > entity trouvé!");
                 for scene_handler in &scene_handlers.0 {
-
                     // the second condition should be enough.
-                    if scene_handler.type_creature == creature.type_creature /* scene_handler.creature_entity_id == Some(entity.id()) */ {
+                    if scene_handler.type_creature == creature.type_creature
+                    /* scene_handler.creature_entity_id == Some(entity.id()) */
+                    {
                         // on retrouve ses animations SceneHandler
-                        debug!("  > scene_handler trouvé pour {:#?}", scene_handler.type_creature);
+                        debug!(
+                            "  > scene_handler trouvé pour {:#?}",
+                            scene_handler.type_creature
+                        );
                         if let Ok(mut player) = query_player.get_mut(animation_link.get()) {
                             let (duration, animation) =
                                 &scene_handler.vec_animations.get_pair(event.index).unwrap();
@@ -298,10 +302,7 @@ fn checker_animation_duration(
 
         if stopwatch.is_over() {
             // play new animation for the current entity
-            debug!(
-                "Timer finished for entity {}",
-                stopwatch.creature_entity_id
-            );
+            debug!("Timer finished for entity {}", stopwatch.creature_entity_id);
             stopwatch.reset_timer(); // en attendant que update_animation vienne faire le travail
 
             for (entity, creature) in query_entity.iter() {
@@ -329,9 +330,10 @@ fn add_animation(
 
         // On ajoute une Stopwatch si on démarre l'animation
         if event.start_animation {
-            let target = event.target.expect("Add_Animation a été appelé avec start_animation==true sans entity en target!");
+            let target = event.target.expect(
+                "Add_Animation a été appelé avec start_animation==true sans entity en target!",
+            );
             spawn_animation_stop_watch(target, 0, commands.borrow_mut());
-
         }
     }
 }
@@ -340,19 +342,19 @@ fn add_animation(
 /// Les stopwatch gardent le temps actuel de l'animation en cours pour une créature
 /// Mis à jour par checker_animation_duration()
 /// creature_entity_id ne doit pas être une Option! Obligatoire.
-pub fn spawn_animation_stop_watch (
+pub fn spawn_animation_stop_watch(
     creature_entity_id: u32,
     index_animation: usize,
     commands: &mut Commands,
-)
-{
-    commands.spawn().insert(AnimationStopWatch {
-        creature_entity_id,
-        index_animation,
-        time: Timer::new(Duration::from_secs(1000.0 as u64), false),
-    })
-        .insert(Name::new(format!("Stopwatch {}", creature_entity_id)))
-    ;
+) {
+    commands
+        .spawn()
+        .insert(AnimationStopWatch {
+            creature_entity_id,
+            index_animation,
+            time: Timer::new(Duration::from_secs(1000.0 as u64), false),
+        })
+        .insert(Name::new(format!("Stopwatch {}", creature_entity_id)));
 }
 
 fn remove_animation(

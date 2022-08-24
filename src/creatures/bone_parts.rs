@@ -4,7 +4,6 @@ use crate::creatures::{
     GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
-use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use std::borrow::BorrowMut;
 use std::f32::consts::PI;
@@ -62,7 +61,7 @@ fn load_asset_parts(
 
 fn float_and_rotate_parts(mut query_parts: Query<&mut Transform, With<BoneTag>>) {
     for mut part_transform in query_parts.iter_mut() {
-        let shift_rotation = (part_transform.rotation.to_axis_angle().1 + 0.1) % (2.0 * PI);
+        let shift_rotation = (part_transform.rotation.to_axis_angle().1 + 0.05) % (2.0 * PI);
         part_transform.rotation = Quat::from_rotation_y(shift_rotation);
 
         //todo : add translation y ^ v
@@ -133,19 +132,56 @@ fn keyboard_spawn_bone_part(
             TypeCreature::Chest,
         );
 
+        spawn_part(
+            commands.borrow_mut(),
+            &vec_scene_handlers,
+            Vec3::new(1.5, 0.0, -1.5),
+            TypeCreature::Head,
+        );
+
         keyboard_input.reset_all();
     }
 }
 
 /// Spawn the part with Commands and create a stopwatch
 fn spawn_part(
-    mut commands: &mut Commands,
+    commands: &mut Commands,
     vec_scene_handlers: &Res<VecSceneHandle>,
     position: Vec3,
     type_creature: TypeCreature,
 ) {
     for scene_handlers in &vec_scene_handlers.0 {
         if scene_handlers.type_creature == type_creature {
+            // Adjusting the loaded scene
+            let adjusted_transform = match type_creature {
+                TypeCreature::Skelly => Transform::default(),
+                TypeCreature::Chest => Transform {
+                    translation: Vec3::new(0.0, 0.0, 0.7),
+                    rotation: Quat::from_scaled_axis(Vec3::new(-1.0, 0.0, 0.0)),
+                    ..default()
+                },
+                TypeCreature::Head => Transform {
+                    translation: Vec3::new(0.0, 0.0, -0.6),
+                    rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, -0.3)),
+                    ..default()
+                },
+                TypeCreature::Leg => Transform {
+                    translation: Vec3::new(-0.4, 0.0, 0.0),
+                    rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, -0.3)),
+                    ..default()
+                },
+                TypeCreature::Bone => Transform {
+                    translation: Vec3::new(-0.4, 0.0, -0.2),
+                    rotation: Quat::from_scaled_axis(Vec3::new(0.4, 0.0, -0.5)),
+                    ..default()
+                },
+                TypeCreature::Arm => Transform {
+                    translation: Vec3::new(0.9, 0.0, -0.4),
+                    rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.7)),
+                    ..default()
+                },
+            };
+
             let entity_id = commands
                 .spawn()
                 .insert_bundle(PbrBundle {
@@ -158,10 +194,7 @@ fn spawn_part(
                 .with_children(|parent| {
                     parent.spawn_bundle(SceneBundle {
                         scene: scene_handlers.handle.clone(),
-                        transform: Transform {
-                            scale: Vec3::ONE,
-                            ..default()
-                        },
+                        transform: adjusted_transform,
                         ..default()
                     });
                 })

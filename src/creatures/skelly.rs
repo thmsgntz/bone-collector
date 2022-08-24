@@ -1,5 +1,7 @@
 use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
-use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, GLTF_PATH_FULL_BODY, Player, TypeCreature};
+use crate::creatures::{
+    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY,
+};
 use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
@@ -177,7 +179,7 @@ impl CreatureTrait for Skelly {
         event_writer.send(AddAnimation {
             scene_handler: skelly_scene_handle,
             target: Some(skelly_id.id()),
-            start_animation: true
+            start_animation: true,
         });
     }
 

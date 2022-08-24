@@ -6,8 +6,8 @@ use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Velocity;
 
-pub(crate) mod skelly;
 mod bone_parts;
+pub(crate) mod skelly;
 
 // const ENTITY_SPEED: f32 = 2.0;
 // const ENTITY_SPEED_ROTATION: f32 = 0.1;
@@ -18,7 +18,6 @@ pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
 pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
 pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
 pub static GLTF_PATH_ARM: &str = "models/arm/arm.gltf";
-
 
 pub trait CreatureTrait {
     fn spawn(
@@ -118,7 +117,7 @@ impl Creature {
                 event_writer.send(ChangeAnimation {
                     target,
                     index: 0,
-                    repeat: true
+                    repeat: true,
                 });
             }
         }
@@ -197,7 +196,7 @@ fn keyboard_control(
                     return;
                 }
             }
-            _ => {return}
+            _ => return,
         }
 
         // Update Transform.translation

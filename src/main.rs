@@ -7,10 +7,10 @@ use bevy::log::LogSettings;
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 
-use bevy_inspector_egui::WorldInspectorPlugin;
-use bevy_rapier3d::prelude::*;
 use crate::animations_handler::{AddAnimation, HashMapAnimationClip, SceneHandle};
 use crate::creatures::skelly::SkellyAnimationId;
+use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_rapier3d::prelude::*;
 
 mod settings {
     use bevy::window::WindowMode;
@@ -62,7 +62,7 @@ fn main() {
             height: settings::WINDOW_HEIGHT,
             position: WindowPosition::At(Vec2::new(settings::WINDOW_POSITION_X, settings::WINDOW_POSITION_Y)),
             mode: settings::WINDOW_MODE,
-            //present_mode: PresentMode::Mailbox,
+            present_mode: PresentMode::Fifo,
             ..Default::default()
         })
 
