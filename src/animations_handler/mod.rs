@@ -220,9 +220,9 @@ fn update_animation(
                 for scene_handler in &scene_handlers.0 {
 
                     // the second condition should be enough.
-                    if scene_handler.creature_entity_id == Some(entity.id()) || scene_handler.type_creature == creature.type_creature {
+                    if scene_handler.type_creature == creature.type_creature /* scene_handler.creature_entity_id == Some(entity.id()) */ {
                         // on retrouve ses animations SceneHandler
-                        debug!("  > scene_handler trouvé!");
+                        debug!("  > scene_handler trouvé pour {:#?}", scene_handler.type_creature);
                         if let Ok(mut player) = query_player.get_mut(animation_link.get()) {
                             let (duration, animation) =
                                 &scene_handler.vec_animations.get_pair(event.index).unwrap();

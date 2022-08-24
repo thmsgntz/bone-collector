@@ -62,7 +62,7 @@ fn main() {
             height: settings::WINDOW_HEIGHT,
             position: WindowPosition::At(Vec2::new(settings::WINDOW_POSITION_X, settings::WINDOW_POSITION_Y)),
             mode: settings::WINDOW_MODE,
-            present_mode: PresentMode::Mailbox,
+            //present_mode: PresentMode::Mailbox,
             ..Default::default()
         })
 

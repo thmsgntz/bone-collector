@@ -17,6 +17,8 @@ pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
 pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
 pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
 pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
+pub static GLTF_PATH_ARM: &str = "models/arm/arm.gltf";
+
 
 pub trait CreatureTrait {
     fn spawn(
@@ -112,7 +114,13 @@ impl Creature {
             TypeCreature::Skelly => {
                 Skelly::update_animation(target, index_animation, event_writer);
             }
-            _ => {}
+            _ => {
+                event_writer.send(ChangeAnimation {
+                    target,
+                    index: 0,
+                    repeat: true
+                });
+            }
         }
     }
 }
