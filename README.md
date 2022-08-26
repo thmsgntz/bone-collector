@@ -7,6 +7,15 @@ It creates two workflows:
 * [CI](#CI)
 * [Release](#Release)
 
+# Blender :
+
+- Render 2D:
+  - https://www.blenderbasecamp.com/how-to-render-an-image-in-blender/
+- Add transparency
+  - https://blender.stackexchange.com/questions/1303/can-blender-render-pngs-with-the-background-transparent
+- Remove grid and background
+  - https://blender.stackexchange.com/questions/143544/hide-floor-overlay-from-viewport-render-in-blender-2-8
+
 ## CI
 
 Definition: [.github/workflows/ci.yaml](./.github/workflows/ci.yaml)

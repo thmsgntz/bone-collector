@@ -183,6 +183,7 @@ impl CreatureTrait for Skelly {
             target: Some(skelly_id.id()),
             start_animation: true,
         });
+
     }
 
     fn update_animation(
