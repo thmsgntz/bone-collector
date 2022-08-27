@@ -1,26 +1,21 @@
 use crate::animations_handler::{spawn_animation_stop_watch, VecSceneHandle};
 use crate::creatures::{
-    Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE, GLTF_PATH_CHEST,
-    GLTF_PATH_HEAD, GLTF_PATH_LEG,
+    BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE,
+    GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
 use crate::inventory::{Inventory, Pickupable};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 use std::borrow::BorrowMut;
-use std::f32::consts::PI;
 
 pub struct BonePlugin;
 impl Plugin for BonePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(load_asset_parts)
-            .add_system(keyboard_spawn_bone_part)
-            .add_system(float_and_rotate_parts);
+            .add_system(keyboard_spawn_bone_part);
     }
 }
-
-/// marker
-#[derive(Component)]
-struct BoneTag;
 
 /// Loads assets
 fn load_asset_parts(
@@ -60,14 +55,17 @@ fn load_asset_parts(
     );
 }
 
-fn float_and_rotate_parts(mut query_parts: Query<&mut Transform, With<BoneTag>>) {
+/// Old function used to make bone parts rotates
+/// Unecessary with rapier::Velocity!
+/*fn float_and_rotate_parts(mut query_parts: Query<&mut Transform, With<BoneTag>>) {
     for mut part_transform in query_parts.iter_mut() {
-        let shift_rotation = (part_transform.rotation.to_axis_angle().1 + 0.05) % (2.0 * PI);
+        let shift_rotation = (part_transform.rotation.to_axis_angle().1 + 0.05);
+        info!("{} {} {}", part_transform.rotation, (shift_rotation), Quat::from_rotation_y(shift_rotation));
         part_transform.rotation = Quat::from_rotation_y(shift_rotation);
 
         //todo : add translation y ^ v
     }
-}
+}*/
 
 /// Helper to load asset
 fn helper_load_asset(
@@ -105,6 +103,7 @@ fn keyboard_spawn_bone_part(
     vec_scene_handlers: Res<VecSceneHandle>,
 ) {
     if keyboard_input.pressed(KeyCode::B) {
+        // TODO: remove debug
         let mut inventory = query_inventory.single_mut();
         inventory.add_bone(5);
 
@@ -203,6 +202,20 @@ fn spawn_part(
                         ..default()
                     });
                 })
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(PbrBundle {
+                            transform: Transform::from_xyz(0.0, 1.0, 0.0),
+                            ..default()
+                        })
+                        .insert(Collider::ball(0.25));
+                })
+                .insert(RigidBody::KinematicVelocityBased)
+                .insert(Velocity {
+                    linvel: Default::default(),
+                    angvel: Vec3::new(0.0, 1.0, 0.0),
+                })
+                .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
                 .insert(BoneTag)
                 .insert(Pickupable)
                 .insert(Creature {
