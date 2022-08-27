@@ -3,11 +3,13 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use std::borrow::BorrowMut;
 use std::time::Duration;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 pub struct AnimationHandler;
 impl Plugin for AnimationHandler {
     fn build(&self, app: &mut App) {
         app.insert_resource::<VecSceneHandle>(Default::default())
+            .register_inspectable::<AnimationEntityLink>()
             .add_event::<ChangeAnimation>()
             .add_event::<AddAnimation>()
             .add_event::<RemoveAnimation>()
@@ -52,6 +54,9 @@ pub struct RemoveAnimation {
     pub entity_id: u32,
 }
 
+#[derive(Component)]
+pub struct TagPlayerScene;
+
 /// Ressource qui contient un vecteur de SceneHandle
 /// qui définit tous les animations des créatures
 /// Ajouté au world:  app.insert_resource::<VecSceneHandle>(Default::default())
@@ -91,6 +96,7 @@ pub struct AnimationStopWatch {
     pub creature_entity_id: u32,
     pub index_animation: usize,
     pub time: Timer,
+    pub manual_termination: bool,
 }
 
 impl AnimationStopWatch {
@@ -98,9 +104,16 @@ impl AnimationStopWatch {
         self.time.reset();
     }
 
-    fn is_over(&self) -> bool {
-        self.time.finished()
+    fn manual_is_over(&mut self) -> bool {
+        if self.manual_termination {
+            self.manual_termination = false;
+            true
+        } else {
+            self.time.finished()
+        }
     }
+
+    fn set_over(&mut self) { self.manual_termination = true}
 
     fn tick(&mut self, delta: Duration) {
         self.time.tick(delta);
@@ -121,6 +134,9 @@ pub struct SceneHandle {
 
     /// type of the creature. Same type can use the same AnimationClip & Scenes
     pub type_creature: TypeCreature,
+
+    /// To handle mutilple scene for one entity
+    pub activated: bool,
 }
 
 /// Composant qui mis à jour par link_animations()
@@ -135,7 +151,7 @@ pub struct SceneHandle {
 /// ```
 ///    Ok(player) = query_player.get_mut(animation_link.0)
 /// ```
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 pub struct AnimationEntityLink(pub Entity);
 
 impl AnimationEntityLink {
@@ -163,16 +179,19 @@ fn link_animations(
     // Get all the Animation players which can be deep and hidden in the hierarchy
 
     for entity in player_query.iter() {
-        let top_entity = get_top_parent(entity, &parent_query);
+        let skelly_entity = get_top_parent(entity, &parent_query);
 
         debug!("Calling: link_animations. {:#?}", entity);
 
         // If the top parent has an animation config ref then link the player to the config
-        if animations_entity_link_query.get(top_entity).is_ok() {
+        if animations_entity_link_query.get(skelly_entity).is_ok() {
             warn!("Problem with multiple animations players for the same top parent");
+            warn!("{:?} {:?} AnimationLink.{:?}", entity, skelly_entity, animations_entity_link_query.get(skelly_entity).unwrap().0);
+
         } else {
+            warn!("Skelly {:?} / AnimationPlayer:{:?})", skelly_entity, entity);
             commands
-                .entity(top_entity)
+                .entity(skelly_entity)
                 .insert(AnimationEntityLink(entity));
         }
     }
@@ -219,7 +238,7 @@ fn update_animation(
                 debug!("  > entity trouvé!");
                 for scene_handler in &scene_handlers.0 {
                     // the second condition should be enough.
-                    if scene_handler.type_creature == creature.type_creature
+                    if scene_handler.activated && scene_handler.type_creature == creature.type_creature
                     /* scene_handler.creature_entity_id == Some(entity.id()) */
                     {
                         // on retrouve ses animations SceneHandler
@@ -227,6 +246,7 @@ fn update_animation(
                             "  > scene_handler trouvé pour {:#?}",
                             scene_handler.type_creature
                         );
+
                         if let Ok(mut player) = query_player.get_mut(animation_link.get()) {
                             let (duration, animation) =
                                 &scene_handler.vec_animations.get_pair(event.index).unwrap();
@@ -245,7 +265,6 @@ fn update_animation(
                                     stopwatch
                                         .time
                                         .set_duration(Duration::from_secs_f32(*duration));
-                                    debug!("Setting stopwatch!");
                                 }
                             }
                             creature.current_animation_index.0 = event.index;
@@ -301,16 +320,18 @@ fn checker_animation_duration(
     for mut stopwatch in query_stopwatch.iter_mut() {
         stopwatch.tick(time.delta());
 
-        if stopwatch.is_over() {
+        if stopwatch.manual_is_over() {
             // play new animation for the current entity
             debug!("Timer finished for entity {}", stopwatch.creature_entity_id);
             stopwatch.reset_timer(); // en attendant que update_animation vienne faire le travail
+
+            let mut index_animation = stopwatch.index_animation;
 
             for (entity, creature) in query_entity.iter() {
                 if entity.id() == stopwatch.creature_entity_id {
                     creature.update_animation(
                         stopwatch.creature_entity_id,
-                        stopwatch.index_animation,
+                        index_animation,
                         event_writer.borrow_mut(),
                     );
                 }
@@ -339,6 +360,10 @@ fn add_animation(
     }
 }
 
+fn manually_add_animation(scene: SceneHandle, mut vec_scene_handlers: ResMut<VecSceneHandle>) {
+    vec_scene_handlers.0.push(scene.clone())
+}
+
 /// Ajoute une stopwatch au World.
 /// Les stopwatch gardent le temps actuel de l'animation en cours pour une créature
 /// Mis à jour par checker_animation_duration()
@@ -354,6 +379,7 @@ pub fn spawn_animation_stop_watch(
             creature_entity_id,
             index_animation,
             time: Timer::new(Duration::from_secs(1000.0 as u64), false),
+            manual_termination: false
         })
         .insert(Name::new(format!("Stopwatch {}", creature_entity_id)));
 }

@@ -1,13 +1,11 @@
 use crate::animations_handler::{spawn_animation_stop_watch, VecSceneHandle};
-use crate::creatures::{
-    BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE,
-    GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
-};
+use crate::creatures::{BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG, SceneModelState};
 use crate::inventory::{Inventory, Pickupable};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use std::borrow::BorrowMut;
+use crate::creatures::SceneModelState::{FullBody, OnlyHead};
 
 pub struct BonePlugin;
 impl Plugin for BonePlugin {
@@ -87,6 +85,7 @@ fn helper_load_asset(
         vec_animations: hm_animations,
         creature_entity_id: None,
         type_creature,
+        activated:true,
     };
 
     event_writer.send(AddAnimation {
@@ -99,9 +98,23 @@ fn helper_load_asset(
 fn keyboard_spawn_bone_part(
     mut commands: Commands,
     mut keyboard_input: ResMut<Input<KeyCode>>,
+    mut app_state: ResMut<State<SceneModelState>>,
     mut query_inventory: Query<&mut Inventory>,
     vec_scene_handlers: Res<VecSceneHandle>,
 ) {
+    if keyboard_input.pressed(KeyCode::C) {
+        match app_state.current() {
+            FullBody => {
+                app_state.set(OnlyHead).expect("Already in State gros");
+            }
+            OnlyHead => {
+                app_state.set(FullBody).expect("Already in State gros");
+            }
+        }
+
+        keyboard_input.reset(KeyCode::C);
+    }
+
     if keyboard_input.pressed(KeyCode::B) {
         // TODO: remove debug
         let mut inventory = query_inventory.single_mut();
@@ -142,8 +155,7 @@ fn keyboard_spawn_bone_part(
             Vec3::new(1.5, 0.0, -1.5),
             TypeCreature::Head,
         );
-
-        keyboard_input.reset_all();
+        keyboard_input.reset(KeyCode::B);
     }
 }
 

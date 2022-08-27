@@ -1,7 +1,5 @@
-use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
-use crate::creatures::{
-    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY,
-};
+use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle, TagPlayerScene};
+use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY, GLTF_PATH_HEAD, SceneFullBody, SceneOnlyHead};
 use crate::directions;
 use crate::inventory::Inventory;
 use bevy::prelude::*;
@@ -113,7 +111,8 @@ impl CreatureTrait for Skelly {
         mut event_writer: EventWriter<AddAnimation>,
     ) {
         // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
-        let mut skelly_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY);
+        let mut full_body_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY, 11);
+        let mut head_scene_handle = setup_skelly(&asset_server, GLTF_PATH_HEAD, 1);
 
         // Skeleton
         let skelly_id = commands
@@ -128,14 +127,14 @@ impl CreatureTrait for Skelly {
             })
             .with_children(|parent| {
                 parent.spawn_bundle(SceneBundle {
-                    scene: skelly_scene_handle.handle.clone(),
+                    scene: full_body_scene_handle.handle.clone(),
                     transform: Transform {
                         translation: Default::default(),
                         rotation: Default::default(),
                         scale: Vec3::ONE * 0.6,
                     },
                     ..default()
-                });
+                }).insert(TagPlayerScene);
             })
             .with_children(|children| {
                 children
@@ -177,13 +176,24 @@ impl CreatureTrait for Skelly {
             .insert(Name::new("Skelly"))
             .id();
 
-        skelly_scene_handle.creature_entity_id = Some(skelly_id.id());
+        full_body_scene_handle.creature_entity_id = Some(skelly_id.id());
+        head_scene_handle.creature_entity_id = Some(skelly_id.id());
+        head_scene_handle.activated = false;
 
         event_writer.send(AddAnimation {
-            scene_handler: skelly_scene_handle,
+            scene_handler: head_scene_handle.clone(),
+            target: Some(skelly_id.id()),
+            start_animation: false,
+        });
+
+        event_writer.send(AddAnimation {
+            scene_handler: full_body_scene_handle.clone(),
             target: Some(skelly_id.id()),
             start_animation: true,
         });
+
+        commands.insert_resource(SceneFullBody(full_body_scene_handle));
+        commands.insert_resource(SceneOnlyHead(head_scene_handle));
     }
 
     fn update_animation(
@@ -202,7 +212,7 @@ impl CreatureTrait for Skelly {
             }
             SkellyAnimationId::Attack => {}
             SkellyAnimationId::Yell => {}
-            SkellyAnimationId::Walk => {}
+            SkellyAnimationId::Walk => return,
             SkellyAnimationId::Run => {}
             SkellyAnimationId::Fall => {}
             SkellyAnimationId::Hit => {}
@@ -267,12 +277,12 @@ mod tests {
     }
 }
 
-fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandle {
+fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str, nb_max_animation: usize) -> SceneHandle {
     let asset_scene_handle = asset_server.load(format!("{}{}", scene_path, "#Scene0").as_str());
 
     let mut hm_animations = HashMapAnimationClip::new();
 
-    for i in 0..11 {
+    for i in 0..nb_max_animation {
         let id = SkellyAnimationId::from(i as usize);
         let handle = asset_server.load(format!("{}#Animation{}", scene_path, id as usize).as_str());
         hm_animations.insert(id as usize, id.get_duration(), handle);
@@ -283,5 +293,6 @@ fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandl
         vec_animations: hm_animations,
         creature_entity_id: None,
         type_creature: TypeCreature::Skelly,
+        activated: true
     }
 }

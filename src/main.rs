@@ -13,6 +13,17 @@ use crate::creatures::skelly::SkellyAnimationId;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
+
+/*
+TODO:
+ - le fun vient de se passer dans creature::update_player_model. Refacto
+ - Voir si c'est grave le problème d'armature des modèles incomplets (sinon on passe)
+ - Problème de texture de la head ??
+ - Si pas de (gros) problèmes bloquants, on roule pour la suite
+ */
+
+
+
 mod settings {
     use bevy::window::WindowMode;
 
@@ -91,7 +102,8 @@ fn main() {
 
         /* Login*/
         .insert_resource(LogSettings {
-            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info".into(),
+            // TODO: remove bevy_animation=error!
+            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info,bevy_animation=warn".into(),
             level: bevy::log::Level::DEBUG,
         })
 
