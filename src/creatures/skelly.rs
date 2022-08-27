@@ -3,9 +3,9 @@ use crate::creatures::{
     Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY,
 };
 use crate::directions;
+use crate::inventory::Inventory;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use crate::inventory::Inventory;
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
@@ -183,7 +183,6 @@ impl CreatureTrait for Skelly {
             target: Some(skelly_id.id()),
             start_animation: true,
         });
-
     }
 
     fn update_animation(

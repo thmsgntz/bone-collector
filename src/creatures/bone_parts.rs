@@ -3,7 +3,7 @@ use crate::creatures::{
     Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE, GLTF_PATH_CHEST,
     GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
-use crate::inventory::Pickupable;
+use crate::inventory::{Inventory, Pickupable};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use std::borrow::BorrowMut;
@@ -101,9 +101,13 @@ fn helper_load_asset(
 fn keyboard_spawn_bone_part(
     mut commands: Commands,
     mut keyboard_input: ResMut<Input<KeyCode>>,
+    mut query_inventory: Query<&mut Inventory>,
     vec_scene_handlers: Res<VecSceneHandle>,
 ) {
     if keyboard_input.pressed(KeyCode::B) {
+        let mut inventory = query_inventory.single_mut();
+        inventory.add_bone(5);
+
         // B for bone
         spawn_part(
             commands.borrow_mut(),
