@@ -233,18 +233,19 @@ fn update_animation(
 
                             if event.repeat {
                                 player.play(animation.clone_weak()).repeat();
+                                debug!("Playing repeat!");
                             } else {
                                 player.play(animation.clone_weak());
                                 debug!("Playing!");
+                            }
 
-                                for mut stopwatch in query_stopwatch.iter_mut() {
-                                    if stopwatch.creature_entity_id == entity.id() {
-                                        stopwatch.index_animation = event.index;
-                                        stopwatch
-                                            .time
-                                            .set_duration(Duration::from_secs_f32(*duration));
-                                        debug!("Setting stopwatch!");
-                                    }
+                            for mut stopwatch in query_stopwatch.iter_mut() {
+                                if stopwatch.creature_entity_id == entity.id() {
+                                    stopwatch.index_animation = event.index;
+                                    stopwatch
+                                        .time
+                                        .set_duration(Duration::from_secs_f32(*duration));
+                                    debug!("Setting stopwatch!");
                                 }
                             }
                             creature.current_animation_index.0 = event.index;

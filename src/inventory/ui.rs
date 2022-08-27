@@ -13,14 +13,17 @@ pub struct InventoryTextTag(pub ItemType);
 ///    - One child holding the image of the bone (with alpha background)
 ///    - One child for the text with one section tagged to be updated
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let handle_image = asset_server.load("models/arm/arm.png");
+    let handle_arm_image = asset_server.load("models/arm/arm.png");
+    let handle_chest_image = asset_server.load("models/chest/chest.png");
+    let handle_bone_image = asset_server.load("models/bone/bone.png");
+    let handle_leg_image = asset_server.load("models/leg/leg.png");
     let handle_cadre = asset_server.load("cadre.png");
     let handle_font = asset_server.load("fonts/FiraSans-Bold.ttf");
 
     // Bones
     let (first_cadre, first_bone, first_text) = children_node_ui(
         handle_cadre.clone(),
-        handle_image.clone(),
+        handle_bone_image,
         handle_font.clone(),
         format!("{} {}", TEXT_INV_BONE, STARTING_NB_BONES),
     );
@@ -28,7 +31,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Arms
     let (second_cadre, second_bone, second_text) = children_node_ui(
         handle_cadre.clone(),
-        handle_image.clone(),
+        handle_arm_image,
         handle_font.clone(),
         format!("{} {}", TEXT_INV_ARM, STARTING_NB_ARM),
     );
@@ -36,7 +39,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Legs
     let (third_cadre, third_bone, third_text) = children_node_ui(
         handle_cadre.clone(),
-        handle_image.clone(),
+        handle_leg_image,
         handle_font.clone(),
         format!("{} {}", TEXT_INV_LEG, STARTING_NB_LEG),
     );
@@ -44,7 +47,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Chest
     let (fourth_cadre, fourth_bone, fourth_text) = children_node_ui(
         handle_cadre,
-        handle_image,
+        handle_chest_image,
         handle_font,
         format!("{} {}", TEXT_INV_CHEST, STARTING_NB_CHEST),
     );

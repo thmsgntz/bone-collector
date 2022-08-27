@@ -195,7 +195,7 @@ impl CreatureTrait for Skelly {
         let mut repeat = false;
 
         match SkellyAnimationId::from(index_animation) {
-            SkellyAnimationId::Idle => {}
+            SkellyAnimationId::Idle => return,
             SkellyAnimationId::LookingAround => {
                 new_animation = SkellyAnimationId::Idle;
                 repeat = true;
