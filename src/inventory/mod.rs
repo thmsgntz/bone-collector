@@ -1,8 +1,10 @@
 mod ui;
 
+use crate::creatures::{BoneTag, Creature, ToDespawn, TypeCreature};
 use crate::inventory::ui::InventoryTextTag;
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_rapier3d::prelude::CollisionEvent;
 
 pub const STARTING_NB_BONES: u8 = 0;
 pub const STARTING_NB_CHEST: u8 = 0;
@@ -19,7 +21,8 @@ impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.register_inspectable::<Inventory>()
             .add_startup_system(ui::setup_ui)
-            .add_system(update_inventory_text);
+            .add_system(update_inventory_text)
+            .add_system_to_stage(CoreStage::PostUpdate, update_inventory_on_pickup);
     }
 }
 
@@ -69,17 +72,14 @@ impl Inventory {
         self.items[0].count += count;
     }
 
-    #[allow(dead_code)] // todo()
     pub(crate) fn add_arms(&mut self, count: usize) {
         self.items[1].count += count;
     }
 
-    #[allow(dead_code)] // todo()
     pub(crate) fn add_legs(&mut self, count: usize) {
         self.items[2].count += count;
     }
 
-    #[allow(dead_code)] // todo()
     pub(crate) fn add_chest(&mut self, count: usize) {
         self.items[3].count += count;
     }
@@ -122,6 +122,37 @@ fn update_inventory_text(
                 if text_tag.0 == item.item {
                     text_section.sections[0].value =
                         format!("{} {}", item.item.get_text(), item.count);
+                }
+            }
+        }
+    }
+}
+
+fn update_inventory_on_pickup(
+    parent_query: Query<&Parent>,
+    query_bone: Query<&Creature, With<BoneTag>>,
+    mut query_inventory: Query<&mut Inventory>,
+    mut command: Commands,
+    mut collision_events: EventReader<CollisionEvent>,
+) {
+    for collision_event in collision_events.iter() {
+        if let CollisionEvent::Started(_skelly_child, entity_bone_child, _) = collision_event {
+            // despawn bone (need parent because collider is inside child)
+            if let Ok(entity_bone) = parent_query.get(*entity_bone_child) {
+                if let Ok(bone_creature) = query_bone.get(entity_bone.get()) {
+                    command.entity(entity_bone.get()).insert(ToDespawn);
+
+                    // Add bone to inventory count
+                    if let Ok(mut inventory) = query_inventory.get_single_mut() {
+                        match bone_creature.type_creature {
+                            TypeCreature::Chest => inventory.add_chest(1),
+                            TypeCreature::Leg => inventory.add_legs(1),
+                            TypeCreature::Bone => inventory.add_bone(1),
+                            TypeCreature::Arm => inventory.add_arms(1),
+                            TypeCreature::Skelly => {}
+                            TypeCreature::Head => {}
+                        }
+                    }
                 }
             }
         }

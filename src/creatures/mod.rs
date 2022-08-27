@@ -1,4 +1,4 @@
-use crate::animations_handler::{AddAnimation, ChangeAnimation};
+use crate::animations_handler::{AddAnimation, AnimationStopWatch, ChangeAnimation};
 use crate::creatures::skelly::{Skelly, SkellyAnimationId};
 use bevy::math::vec3;
 
@@ -8,6 +8,10 @@ use bevy_rapier3d::dynamics::Velocity;
 
 mod bone_parts;
 pub(crate) mod skelly;
+
+/// marker
+#[derive(Component)]
+pub(crate) struct BoneTag;
 
 // const ENTITY_SPEED: f32 = 2.0;
 // const ENTITY_SPEED_ROTATION: f32 = 0.1;
@@ -35,6 +39,9 @@ pub trait CreatureTrait {
     fn can_move(animation_index: usize) -> bool;
 }
 
+#[derive(Component)]
+pub struct ToDespawn;
+
 /// Player marker
 #[derive(Component)]
 pub(crate) struct Player;
@@ -44,7 +51,8 @@ impl Plugin for CreaturePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(bone_parts::BonePlugin)
             .add_startup_system(spawn_skelly)
-            .add_system(keyboard_control);
+            .add_system(keyboard_control)
+            .add_system(cleanup_creature);
     }
 }
 
@@ -224,5 +232,23 @@ fn keyboard_control(
                 event_writer,
             );
         }
+    }
+}
+
+fn cleanup_creature(
+    mut commands: Commands,
+    q: Query<Entity, With<ToDespawn>>,
+    query_stopwatch: Query<(Entity, &AnimationStopWatch)>,
+) {
+    for e in q.iter() {
+        // remove stopwatch
+        for (e_sw, stopwatch) in query_stopwatch.iter() {
+            if stopwatch.creature_entity_id == e.id() {
+                commands.entity(e_sw).despawn_recursive();
+            }
+        }
+
+        // remove creature
+        commands.entity(e).despawn_recursive();
     }
 }

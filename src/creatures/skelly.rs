@@ -140,10 +140,11 @@ impl CreatureTrait for Skelly {
             .with_children(|children| {
                 children
                     .spawn()
-                    .insert(Collider::cuboid(0.1, 0.9, 0.1))
+                    .insert(Collider::cuboid(0.3, 0.9, 0.3))
+                    .insert(ActiveEvents::COLLISION_EVENTS)
                     .insert_bundle(PbrBundle {
                         transform: Transform {
-                            translation: Vec3::new(0.0, 1.0, 0.0),
+                            translation: Vec3::new(0.0, 1.0, 0.3),
                             rotation: Quat::from_rotation_y(
                                 directions::Direction::Left.get_angle(),
                             ), // Direction::Left
@@ -194,7 +195,7 @@ impl CreatureTrait for Skelly {
         let mut repeat = false;
 
         match SkellyAnimationId::from(index_animation) {
-            SkellyAnimationId::Idle => {}
+            SkellyAnimationId::Idle => return,
             SkellyAnimationId::LookingAround => {
                 new_animation = SkellyAnimationId::Idle;
                 repeat = true;
@@ -207,8 +208,8 @@ impl CreatureTrait for Skelly {
             SkellyAnimationId::Hit => {}
             SkellyAnimationId::Die => {}
             SkellyAnimationId::Spawn => {
-                new_animation = SkellyAnimationId::LookingAround;
-                repeat = false;
+                new_animation = SkellyAnimationId::Idle;
+                repeat = true;
             }
             SkellyAnimationId::Hanged => {}
             SkellyAnimationId::None => {}
