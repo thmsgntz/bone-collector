@@ -1,6 +1,9 @@
 use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
-use crate::creatures::{Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature};
+use crate::creatures::{
+    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY,
+};
 use crate::directions;
+use crate::inventory::Inventory;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
@@ -84,7 +87,7 @@ impl From<SkellyAnimationId> for CurrentAnimationIndex {
 }
 
 impl SkellyAnimationId {
-    fn get_duration(&self) -> f32 {
+    pub(crate) fn get_duration(&self) -> f32 {
         match self {
             SkellyAnimationId::Idle => SKELLY_ANIM_DURATION_IDLE,
             SkellyAnimationId::LookingAround => SKELLY_ANIM_DURATION_LOOKING_AROUND,
@@ -109,7 +112,8 @@ impl CreatureTrait for Skelly {
         asset_server: Res<AssetServer>,
         mut event_writer: EventWriter<AddAnimation>,
     ) {
-        let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
+        // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
+        let mut skelly_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY);
 
         // Skeleton
         let skelly_id = commands
@@ -168,6 +172,7 @@ impl CreatureTrait for Skelly {
                 can_move: false,
             })
             .insert(Player)
+            .insert(Inventory::default())
             .insert(Name::new("Skelly"))
             .id();
 
@@ -175,6 +180,8 @@ impl CreatureTrait for Skelly {
 
         event_writer.send(AddAnimation {
             scene_handler: skelly_scene_handle,
+            target: Some(skelly_id.id()),
+            start_animation: true,
         });
     }
 
@@ -274,5 +281,6 @@ fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandl
         handle: asset_scene_handle,
         vec_animations: hm_animations,
         creature_entity_id: None,
+        type_creature: TypeCreature::Skelly,
     }
 }

@@ -6,10 +6,18 @@ use crate::directions;
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Velocity;
 
+mod bone_parts;
 pub(crate) mod skelly;
 
 // const ENTITY_SPEED: f32 = 2.0;
 // const ENTITY_SPEED_ROTATION: f32 = 0.1;
+
+pub static GLTF_PATH_FULL_BODY: &str = "models/full_body/scene.gltf";
+pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
+pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
+pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
+pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
+pub static GLTF_PATH_ARM: &str = "models/arm/arm.gltf";
 
 pub trait CreatureTrait {
     fn spawn(
@@ -34,7 +42,8 @@ pub(crate) struct Player;
 pub struct CreaturePlugin;
 impl Plugin for CreaturePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_skelly)
+        app.add_plugin(bone_parts::BonePlugin)
+            .add_startup_system(spawn_skelly)
             .add_system(keyboard_control);
     }
 }
@@ -72,8 +81,14 @@ impl CurrentAnimationIndex {
     }
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum TypeCreature {
     Skelly,
+    Chest,
+    Head,
+    Leg,
+    Bone,
+    Arm,
 }
 
 //#[derive(Bundle)]
@@ -97,6 +112,13 @@ impl Creature {
         match self.type_creature {
             TypeCreature::Skelly => {
                 Skelly::update_animation(target, index_animation, event_writer);
+            }
+            _ => {
+                event_writer.send(ChangeAnimation {
+                    target,
+                    index: 0,
+                    repeat: true,
+                });
             }
         }
     }
@@ -174,6 +196,7 @@ fn keyboard_control(
                     return;
                 }
             }
+            _ => return,
         }
 
         // Update Transform.translation

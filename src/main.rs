@@ -2,10 +2,14 @@ mod animations_handler;
 mod camera;
 mod creatures;
 mod directions;
+mod inventory;
 
 use bevy::log::LogSettings;
 use bevy::prelude::*;
 use bevy::window::PresentMode;
+
+use crate::animations_handler::{AddAnimation, HashMapAnimationClip, SceneHandle};
+use crate::creatures::skelly::SkellyAnimationId;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
@@ -22,12 +26,30 @@ mod settings {
 
 fn setup_light(mut commands: Commands) {
     // light
+    const HALF_SIZE: f32 = 10.0;
     commands
-        .spawn_bundle(PointLightBundle {
-            transform: Transform::from_xyz(3.0, 8.0, 5.0),
+        .spawn_bundle(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                shadow_projection: OrthographicProjection {
+                    left: -HALF_SIZE,
+                    right: HALF_SIZE,
+                    bottom: -HALF_SIZE,
+                    top: HALF_SIZE,
+                    near: -10.0 * HALF_SIZE,
+                    far: 10.0 * HALF_SIZE,
+                    ..default()
+                },
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
+                ..default()
+            },
             ..default()
         })
-        .insert(Name::new("PointLight"));
+        .insert(Name::new("SunLight"));
 }
 
 fn setup_floor(
@@ -59,7 +81,7 @@ fn main() {
             height: settings::WINDOW_HEIGHT,
             position: WindowPosition::At(Vec2::new(settings::WINDOW_POSITION_X, settings::WINDOW_POSITION_Y)),
             mode: settings::WINDOW_MODE,
-            present_mode: PresentMode::Mailbox,
+            present_mode: PresentMode::Fifo,
             ..Default::default()
         })
 
@@ -78,7 +100,6 @@ fn main() {
 
         /* EGUI info */
         .add_plugin(WorldInspectorPlugin::new())
-        //.register_type::<Creature>()
 
         /* Rapier */
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
@@ -88,6 +109,7 @@ fn main() {
         .add_plugin(camera::CameraPlugin)
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)
+        .add_plugin(inventory::InventoryPlugin)
         .add_startup_system(setup_light)
         .add_startup_system(setup_floor)
 
