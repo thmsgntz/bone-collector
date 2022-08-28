@@ -2,8 +2,8 @@ use crate::animations_handler::{
     AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle, TagPlayerScene,
 };
 use crate::creatures::{
-    Creature, CreatureTrait, CurrentAnimationIndex, Player, SceneFullBody, SceneOnlyHead,
-    TypeCreature, GLTF_PATH_FULL_BODY, GLTF_PATH_HEAD,
+    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, VecSkellyScenes,
+    GLTF_PATH_FULL_BODY, GLTF_PATH_HALF_BODY, GLTF_PATH_HEAD,
 };
 use crate::directions;
 use crate::inventory::Inventory;
@@ -116,8 +116,15 @@ impl CreatureTrait for Skelly {
         mut event_writer: EventWriter<AddAnimation>,
     ) {
         // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
-        let mut full_body_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY, TypeCreature::SkellyFullBody);
-        let mut head_scene_handle = setup_skelly(&asset_server, GLTF_PATH_HEAD, TypeCreature::SkellyOnlyHead);
+        let mut full_body_scene_handle = setup_skelly(
+            &asset_server,
+            GLTF_PATH_FULL_BODY,
+            TypeCreature::SkellyFullBody,
+        );
+        let mut half_scene_handle =
+            setup_skelly(&asset_server, GLTF_PATH_HALF_BODY, TypeCreature::SkellyHalf);
+        let mut head_scene_handle =
+            setup_skelly(&asset_server, GLTF_PATH_HEAD, TypeCreature::SkellyOnlyHead);
 
         // Skeleton
         let skelly_id = commands
@@ -184,6 +191,10 @@ impl CreatureTrait for Skelly {
             .id();
 
         full_body_scene_handle.creature_entity_id = Some(skelly_id.id());
+
+        half_scene_handle.creature_entity_id = Some(skelly_id.id());
+        half_scene_handle.activated = false;
+
         head_scene_handle.creature_entity_id = Some(skelly_id.id());
         head_scene_handle.activated = false;
 
@@ -194,13 +205,23 @@ impl CreatureTrait for Skelly {
         });
 
         event_writer.send(AddAnimation {
+            scene_handler: half_scene_handle.clone(),
+            target: Some(skelly_id.id()),
+            start_animation: false,
+        });
+
+        event_writer.send(AddAnimation {
             scene_handler: full_body_scene_handle.clone(),
             target: Some(skelly_id.id()),
             start_animation: true,
         });
 
-        commands.insert_resource(SceneFullBody(full_body_scene_handle));
-        commands.insert_resource(SceneOnlyHead(head_scene_handle));
+        // Insert vector of pointers, to have access to these 3 models all the time easily
+        commands.insert_resource(VecSkellyScenes(vec![
+            full_body_scene_handle,
+            half_scene_handle,
+            head_scene_handle,
+        ]));
     }
 
     fn update_animation(
@@ -293,17 +314,10 @@ fn setup_skelly(
 
     let mut hm_animations = HashMapAnimationClip::new();
 
-    if type_creature == TypeCreature::SkellyFullBody{
-        for i in 0..11 {
-            let id = SkellyAnimationId::from(i as usize);
-            let handle =
-                asset_server.load(format!("{}#Animation{}", scene_path, id as usize).as_str());
-            hm_animations.insert(id as usize, id.get_duration(), handle);
-        }
-    } else {
-        let id = 0;
+    for i in 0..11 {
+        let id = SkellyAnimationId::from(i as usize);
         let handle = asset_server.load(format!("{}#Animation{}", scene_path, id as usize).as_str());
-        hm_animations.insert(id as usize, SkellyAnimationId::Idle.get_duration(), handle);
+        hm_animations.insert(id as usize, id.get_duration(), handle);
     }
 
     SceneHandle {

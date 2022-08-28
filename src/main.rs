@@ -14,16 +14,6 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
 
-/*
-TODO:
- - le fun vient de se passer dans creature::update_player_model. Refacto
- - Voir si c'est grave le problème d'armature des modèles incomplets (sinon on passe)
- - Problème de texture de la head ??
- - Si pas de (gros) problèmes bloquants, on roule pour la suite
- */
-
-
-
 mod settings {
     use bevy::window::WindowMode;
 
