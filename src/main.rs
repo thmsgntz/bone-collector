@@ -3,6 +3,7 @@ mod camera;
 mod creatures;
 mod directions;
 mod inventory;
+mod map;
 
 use bevy::log::LogSettings;
 use bevy::prelude::*;
@@ -52,24 +53,6 @@ fn setup_light(mut commands: Commands) {
         .insert(Name::new("SunLight"));
 }
 
-fn setup_floor(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let size = 10.0;
-
-    commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size })),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-            ..default()
-        })
-        .insert(RigidBody::Fixed)
-        .insert(Collider::cuboid(size / 2.0, 0.1, size / 2.0))
-        .insert(Name::new("Floor"));
-}
-
 fn main() {
     App::new()
 
@@ -91,7 +74,6 @@ fn main() {
 
         /* Login*/
         .insert_resource(LogSettings {
-            // TODO: remove bevy_animation=error!
             filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info,bevy_animation=warn".into(),
             level: bevy::log::Level::DEBUG,
         })
@@ -107,12 +89,12 @@ fn main() {
         //.add_plugin(RapierDebugRenderPlugin::default())
 
         /* My stuff */
+        .add_plugin(map::MapPlugin)
         .add_plugin(camera::CameraPlugin)
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)
         .add_plugin(inventory::InventoryPlugin)
         .add_startup_system(setup_light)
-        .add_startup_system(setup_floor)
 
         .run();
 }

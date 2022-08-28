@@ -115,6 +115,10 @@ impl CreatureTrait for Skelly {
         asset_server: Res<AssetServer>,
         mut event_writer: EventWriter<AddAnimation>,
     ) {
+        let i_shift = Vec3::new(-2.8, 0.0, 2.9);
+        let j_shift = Vec3::new(2.9, 0.0, 2.8);
+        let starting_position = 7.0 * i_shift + 7.0 * j_shift;
+
         // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
         let mut full_body_scene_handle = setup_skelly(
             &asset_server,
@@ -131,7 +135,7 @@ impl CreatureTrait for Skelly {
             .spawn()
             .insert_bundle(PbrBundle {
                 transform: Transform {
-                    translation: Vec3::new(0.0, 0.0, 0.0),
+                    translation: starting_position,
                     rotation: Quat::from_rotation_y(directions::Direction::Up.get_angle()),
                     scale: Vec3::ONE,
                 },
