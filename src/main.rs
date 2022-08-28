@@ -13,7 +13,6 @@ use crate::creatures::skelly::SkellyAnimationId;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
-
 mod settings {
     use bevy::window::WindowMode;
 
