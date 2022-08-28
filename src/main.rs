@@ -91,7 +91,8 @@ fn main() {
 
         /* Login*/
         .insert_resource(LogSettings {
-            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info".into(),
+            // TODO: remove bevy_animation=error!
+            filter: "info,wgpu_core=warn,wgpu_hal=error,bone_collector=debug,bone_collector::animations_handler=info,bevy_animation=warn".into(),
             level: bevy::log::Level::DEBUG,
         })
 

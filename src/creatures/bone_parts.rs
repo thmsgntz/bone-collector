@@ -1,7 +1,8 @@
 use crate::animations_handler::{spawn_animation_stop_watch, VecSceneHandle};
+use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
 use crate::creatures::{
-    BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE,
-    GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
+    BoneTag, Creature, CurrentAnimationIndex, SceneModelState, TypeCreature, GLTF_PATH_ARM,
+    GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
 use crate::inventory::{Inventory, Pickupable};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
@@ -87,6 +88,7 @@ fn helper_load_asset(
         vec_animations: hm_animations,
         creature_entity_id: None,
         type_creature,
+        activated: true,
     };
 
     event_writer.send(AddAnimation {
@@ -99,9 +101,25 @@ fn helper_load_asset(
 fn keyboard_spawn_bone_part(
     mut commands: Commands,
     mut keyboard_input: ResMut<Input<KeyCode>>,
+    mut app_state: ResMut<State<SceneModelState>>,
     mut query_inventory: Query<&mut Inventory>,
     vec_scene_handlers: Res<VecSceneHandle>,
 ) {
+    if keyboard_input.pressed(KeyCode::C) {
+        match app_state.current() {
+            FullBody => {
+                app_state.set(OnlyHead).expect("Already in State gros");
+            }
+            OnlyHead => {
+                app_state.set(HalfBody).expect("Already in State gros");
+            }
+            HalfBody => {
+                app_state.set(FullBody).expect("Already in State gros");
+            }
+        }
+        keyboard_input.reset(KeyCode::C);
+    }
+
     if keyboard_input.pressed(KeyCode::B) {
         // TODO: remove debug
         let mut inventory = query_inventory.single_mut();
@@ -142,8 +160,7 @@ fn keyboard_spawn_bone_part(
             Vec3::new(1.5, 0.0, -1.5),
             TypeCreature::Head,
         );
-
-        keyboard_input.reset_all();
+        keyboard_input.reset(KeyCode::B);
     }
 }
 
@@ -158,7 +175,6 @@ fn spawn_part(
         if scene_handlers.type_creature == type_creature {
             // Adjusting the loaded scene
             let adjusted_transform = match type_creature {
-                TypeCreature::Skelly => Transform::default(),
                 TypeCreature::Chest => Transform {
                     translation: Vec3::new(0.0, 0.0, 0.7),
                     rotation: Quat::from_scaled_axis(Vec3::new(-1.0, 0.0, 0.0)),
@@ -184,6 +200,7 @@ fn spawn_part(
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.7)),
                     ..default()
                 },
+                _ => Transform::default(),
             };
 
             let entity_id = commands

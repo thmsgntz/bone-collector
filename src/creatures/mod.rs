@@ -1,8 +1,11 @@
-use crate::animations_handler::{AddAnimation, AnimationStopWatch, ChangeAnimation};
+use crate::animations_handler::{
+    AddAnimation, AnimationEntityLink, AnimationStopWatch, ChangeAnimation, TagPlayerScene,
+};
 use crate::creatures::skelly::{Skelly, SkellyAnimationId};
 use bevy::math::vec3;
 
-use crate::directions;
+use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
+use crate::{directions, SceneHandle};
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Velocity;
 
@@ -17,8 +20,10 @@ pub(crate) struct BoneTag;
 // const ENTITY_SPEED_ROTATION: f32 = 0.1;
 
 pub static GLTF_PATH_FULL_BODY: &str = "models/full_body/scene.gltf";
+pub static GLTF_PATH_HALF_BODY: &str = "models/half/half_body.gltf";
 pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
-pub static GLTF_PATH_HEAD: &str = "models/head/head.gltf";
+//pub static GLTF_PATH_HEAD_OLD: &str = "models/head/head.gltf";
+pub static GLTF_PATH_HEAD: &str = "models/head/head_with_animation.gltf";
 pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
 pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
 pub static GLTF_PATH_ARM: &str = "models/arm/arm.gltf";
@@ -46,10 +51,27 @@ pub struct ToDespawn;
 #[derive(Component)]
 pub(crate) struct Player;
 
+/// Vec containing pointers to:
+///   - Scene with full body skeleton
+///   - Scene with body without arms
+///   - Scene with only heads
+pub struct VecSkellyScenes(pub Vec<SceneHandle>);
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub(crate) enum SceneModelState {
+    FullBody,
+    HalfBody,
+    OnlyHead,
+}
+
 pub struct CreaturePlugin;
 impl Plugin for CreaturePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(bone_parts::BonePlugin)
+            .add_state(FullBody)
+            .add_system_set(SystemSet::on_exit(OnlyHead).with_system(update_player_model))
+            .add_system_set(SystemSet::on_exit(FullBody).with_system(update_player_model))
+            .add_system_set(SystemSet::on_exit(HalfBody).with_system(update_player_model))
             .add_startup_system(spawn_skelly)
             .add_system(keyboard_control)
             .add_system(cleanup_creature);
@@ -91,7 +113,9 @@ impl CurrentAnimationIndex {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum TypeCreature {
-    Skelly,
+    SkellyFullBody,
+    SkellyOnlyHead,
+    SkellyHalf,
     Chest,
     Head,
     Leg,
@@ -118,10 +142,13 @@ impl Creature {
         event_writer: &mut EventWriter<ChangeAnimation>,
     ) {
         match self.type_creature {
-            TypeCreature::Skelly => {
+            TypeCreature::SkellyFullBody
+            | TypeCreature::SkellyHalf
+            | TypeCreature::SkellyOnlyHead => {
                 Skelly::update_animation(target, index_animation, event_writer);
             }
             _ => {
+                info!("Sending Idle from update_animation");
                 event_writer.send(ChangeAnimation {
                     target,
                     index: 0,
@@ -176,21 +203,12 @@ fn keyboard_control(
     if let Ok((entity, mut player_transform, mut player_velocity, mut player_creature)) =
         query_player.get_single_mut()
     {
+        let idle_index = SkellyAnimationId::Idle as usize;
+
         // Returns if vector_direction is 0
         if vector_direction == Vec3::ZERO {
             if player_creature.current_animation_index == SkellyAnimationId::Walk {
-                send_new_animation(
-                    entity.id(),
-                    SkellyAnimationId::Idle as usize,
-                    true,
-                    event_writer,
-                );
-                /*
-                event_writer.send(ChangeAnimation {
-                    target: entity.id(),
-                    index: SkellyAnimationId::Idle as usize,
-                    repeat: true,
-                });*/
+                send_new_animation(entity.id(), idle_index, true, event_writer);
             }
 
             player_velocity.linvel = vec3(0.0, player_velocity.linvel.y, 0.0);
@@ -199,11 +217,12 @@ fn keyboard_control(
 
         // Returns if the player can not move
         match player_creature.type_creature {
-            TypeCreature::Skelly => {
+            TypeCreature::SkellyFullBody | TypeCreature::SkellyHalf => {
                 if !Skelly::can_move(player_creature.current_animation_index.0) {
                     return;
                 }
             }
+            TypeCreature::SkellyOnlyHead => {}
             _ => return,
         }
 
@@ -224,13 +243,126 @@ fn keyboard_control(
         };
         player_transform.rotation = rotation;
 
-        if player_creature.current_animation_index != SkellyAnimationId::Walk {
+        if player_creature.current_animation_index.0 != SkellyAnimationId::Walk as usize
+            && (player_creature.type_creature == TypeCreature::SkellyFullBody
+                || player_creature.type_creature == TypeCreature::SkellyHalf)
+        {
             send_new_animation(
                 entity.id(),
                 SkellyAnimationId::Walk as usize,
                 true,
                 event_writer,
             );
+        }
+    }
+}
+
+fn update_player_model(
+    mut command: Commands,
+    vec_scenes: Res<VecSkellyScenes>,
+    scene_state: Res<State<SceneModelState>>,
+    mut query_child_scene: Query<Entity, With<TagPlayerScene>>,
+    mut query_player: Query<(Entity, &AnimationEntityLink, &mut Creature), With<Player>>,
+    mut query_stopwatch: Query<&mut AnimationStopWatch>,
+) {
+    info!("Bonjour");
+
+    if let Ok(child_scene) = query_child_scene.get_single_mut() {
+        if let Ok((player_entity, animation_player, mut creature)) = query_player.get_single_mut() {
+            info!("Child found {:?}", child_scene);
+
+            // remove current:,
+            info!("Skelly : {:?}", player_entity);
+            info!("Despawning: {:?} / {:?}", child_scene, animation_player.0);
+            command
+                .entity(player_entity)
+                .remove_children(&[child_scene]);
+            command.entity(child_scene).despawn_recursive();
+            command.entity(animation_player.0).despawn_recursive();
+            command
+                .entity(player_entity)
+                .remove::<AnimationEntityLink>();
+
+            info!("Calling update on_exit: {:?}", *scene_state.current());
+
+            let scene_full_body = &vec_scenes.0[0];
+            let scene_half = &vec_scenes.0[1];
+            let scene_head = &vec_scenes.0[2];
+
+            let mut index_animation = SkellyAnimationId::Spawn as usize;
+
+            match scene_state.current() {
+                OnlyHead => {
+                    // Désactive HEAD, active HALF
+
+                    creature.type_creature = TypeCreature::SkellyHalf;
+                    creature.can_move = true;
+
+                    // add new
+                    command.entity(player_entity).with_children(|parent| {
+                        parent
+                            .spawn_bundle(SceneBundle {
+                                scene: scene_half.handle.clone(),
+                                transform: Transform {
+                                    translation: Default::default(),
+                                    rotation: Default::default(),
+                                    scale: Vec3::ONE * 0.6,
+                                },
+                                ..default()
+                            })
+                            .insert(TagPlayerScene);
+                    });
+                }
+                FullBody => {
+                    // Désactive FULL_BODY, active HEAD
+                    creature.type_creature = TypeCreature::SkellyOnlyHead;
+                    creature.can_move = true;
+
+                    index_animation = SkellyAnimationId::Idle as usize;
+
+                    // add new
+                    command.entity(player_entity).with_children(|parent| {
+                        parent
+                            .spawn_bundle(SceneBundle {
+                                scene: scene_head.handle.clone(),
+                                transform: Transform {
+                                    translation: Vec3::new(0.0, -0.5, 0.0),
+                                    rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.0)),
+                                    scale: Vec3::ONE * 0.6,
+                                },
+                                ..default()
+                            })
+                            .insert(TagPlayerScene);
+                    });
+                }
+                HalfBody => {
+                    // DESACTIVATE HALF, ACTIVATE FULL
+                    creature.type_creature = TypeCreature::SkellyFullBody;
+                    creature.can_move = true;
+
+                    // add new
+                    command.entity(player_entity).with_children(|parent| {
+                        parent
+                            .spawn_bundle(SceneBundle {
+                                scene: scene_full_body.handle.clone(),
+                                transform: Transform {
+                                    translation: Default::default(),
+                                    rotation: Default::default(),
+                                    scale: Vec3::ONE * 0.6,
+                                },
+                                ..default()
+                            })
+                            .insert(TagPlayerScene);
+                    });
+                }
+            }
+            creature.current_animation_index.0 = index_animation;
+            for mut stopwatch in query_stopwatch.iter_mut() {
+                if stopwatch.creature_entity_id == player_entity.id() {
+                    stopwatch.index_animation = index_animation;
+                    stopwatch.manual_termination = true;
+                }
+            }
         }
     }
 }

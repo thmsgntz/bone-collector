@@ -1,6 +1,9 @@
-use crate::animations_handler::{AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle};
+use crate::animations_handler::{
+    AddAnimation, ChangeAnimation, HashMapAnimationClip, SceneHandle, TagPlayerScene,
+};
 use crate::creatures::{
-    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, GLTF_PATH_FULL_BODY,
+    Creature, CreatureTrait, CurrentAnimationIndex, Player, TypeCreature, VecSkellyScenes,
+    GLTF_PATH_FULL_BODY, GLTF_PATH_HALF_BODY, GLTF_PATH_HEAD,
 };
 use crate::directions;
 use crate::inventory::Inventory;
@@ -113,7 +116,15 @@ impl CreatureTrait for Skelly {
         mut event_writer: EventWriter<AddAnimation>,
     ) {
         // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
-        let mut skelly_scene_handle = setup_skelly(&asset_server, GLTF_PATH_FULL_BODY);
+        let mut full_body_scene_handle = setup_skelly(
+            &asset_server,
+            GLTF_PATH_FULL_BODY,
+            TypeCreature::SkellyFullBody,
+        );
+        let mut half_scene_handle =
+            setup_skelly(&asset_server, GLTF_PATH_HALF_BODY, TypeCreature::SkellyHalf);
+        let mut head_scene_handle =
+            setup_skelly(&asset_server, GLTF_PATH_HEAD, TypeCreature::SkellyOnlyHead);
 
         // Skeleton
         let skelly_id = commands
@@ -127,15 +138,17 @@ impl CreatureTrait for Skelly {
                 ..default()
             })
             .with_children(|parent| {
-                parent.spawn_bundle(SceneBundle {
-                    scene: skelly_scene_handle.handle.clone(),
-                    transform: Transform {
-                        translation: Default::default(),
-                        rotation: Default::default(),
-                        scale: Vec3::ONE * 0.6,
-                    },
-                    ..default()
-                });
+                parent
+                    .spawn_bundle(SceneBundle {
+                        scene: full_body_scene_handle.handle.clone(),
+                        transform: Transform {
+                            translation: Default::default(),
+                            rotation: Default::default(),
+                            scale: Vec3::ONE * 0.6,
+                        },
+                        ..default()
+                    })
+                    .insert(TagPlayerScene);
             })
             .with_children(|children| {
                 children
@@ -164,7 +177,7 @@ impl CreatureTrait for Skelly {
                 angvel: Vec3::new(0.0, 0.0, 0.0),
             })
             .insert(Creature {
-                type_creature: TypeCreature::Skelly,
+                type_creature: TypeCreature::SkellyFullBody,
                 direction: directions::Direction::Up,
                 direction_vec3: directions::Direction::Up.get_vec3(),
                 current_animation_index: CurrentAnimationIndex::from(
@@ -177,13 +190,38 @@ impl CreatureTrait for Skelly {
             .insert(Name::new("Skelly"))
             .id();
 
-        skelly_scene_handle.creature_entity_id = Some(skelly_id.id());
+        full_body_scene_handle.creature_entity_id = Some(skelly_id.id());
+
+        half_scene_handle.creature_entity_id = Some(skelly_id.id());
+        half_scene_handle.activated = false;
+
+        head_scene_handle.creature_entity_id = Some(skelly_id.id());
+        head_scene_handle.activated = false;
 
         event_writer.send(AddAnimation {
-            scene_handler: skelly_scene_handle,
+            scene_handler: head_scene_handle.clone(),
+            target: Some(skelly_id.id()),
+            start_animation: false,
+        });
+
+        event_writer.send(AddAnimation {
+            scene_handler: half_scene_handle.clone(),
+            target: Some(skelly_id.id()),
+            start_animation: false,
+        });
+
+        event_writer.send(AddAnimation {
+            scene_handler: full_body_scene_handle.clone(),
             target: Some(skelly_id.id()),
             start_animation: true,
         });
+
+        // Insert vector of pointers, to have access to these 3 models all the time easily
+        commands.insert_resource(VecSkellyScenes(vec![
+            full_body_scene_handle,
+            half_scene_handle,
+            head_scene_handle,
+        ]));
     }
 
     fn update_animation(
@@ -202,7 +240,7 @@ impl CreatureTrait for Skelly {
             }
             SkellyAnimationId::Attack => {}
             SkellyAnimationId::Yell => {}
-            SkellyAnimationId::Walk => {}
+            SkellyAnimationId::Walk => return,
             SkellyAnimationId::Run => {}
             SkellyAnimationId::Fall => {}
             SkellyAnimationId::Hit => {}
@@ -240,7 +278,7 @@ mod tests {
     #[test]
     fn test_can_move() {
         let mut creature = Creature {
-            type_creature: TypeCreature::Skelly,
+            type_creature: TypeCreature::SkellyFullBody,
             direction: directions::Direction::Up,
             direction_vec3: Default::default(),
             current_animation_index: CurrentAnimationIndex(SkellyAnimationId::Idle as usize),
@@ -267,7 +305,11 @@ mod tests {
     }
 }
 
-fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandle {
+fn setup_skelly(
+    asset_server: &Res<AssetServer>,
+    scene_path: &str,
+    type_creature: TypeCreature,
+) -> SceneHandle {
     let asset_scene_handle = asset_server.load(format!("{}{}", scene_path, "#Scene0").as_str());
 
     let mut hm_animations = HashMapAnimationClip::new();
@@ -282,6 +324,7 @@ fn setup_skelly(asset_server: &Res<AssetServer>, scene_path: &str) -> SceneHandl
         handle: asset_scene_handle,
         vec_animations: hm_animations,
         creature_entity_id: None,
-        type_creature: TypeCreature::Skelly,
+        type_creature,
+        activated: true,
     }
 }

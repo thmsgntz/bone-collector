@@ -149,8 +149,7 @@ fn update_inventory_on_pickup(
                             TypeCreature::Leg => inventory.add_legs(1),
                             TypeCreature::Bone => inventory.add_bone(1),
                             TypeCreature::Arm => inventory.add_arms(1),
-                            TypeCreature::Skelly => {}
-                            TypeCreature::Head => {}
+                            _ => {}
                         }
                     }
                 }
