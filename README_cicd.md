@@ -52,7 +52,7 @@ You can follow [Managing releases in a repository](https://docs.github.com/en/re
 Execute the following commands: 
 
 ```sh
-git tag -a "my-game-1.0" -m "First official release"
+git tag -a "bone-collector-1.0" -m "Checking Release"
 git push --tags
 ```
 
