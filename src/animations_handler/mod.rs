@@ -4,7 +4,6 @@ use bevy::utils::HashMap;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use std::borrow::BorrowMut;
 use std::time::Duration;
-use crate::SkellyAnimationId;
 
 pub struct AnimationHandler;
 impl Plugin for AnimationHandler {
@@ -113,7 +112,6 @@ impl AnimationStopWatch {
             self.time.finished()
         }
     }
-
 
     fn tick(&mut self, delta: Duration) {
         self.time.tick(delta);
@@ -241,49 +239,17 @@ fn update_animation(
                 // on a retrouvé le player associé à l'entité
                 debug!("  > entity trouvé!");
                 for scene_handler in &scene_handlers.0 {
-                    // the second condition should be enough.
-                    if scene_handler.activated
-                        && scene_handler.type_creature == creature.type_creature
-                    /* scene_handler.creature_entity_id == Some(entity.id()) */
-                    {
-                        // on retrouve ses animations SceneHandler
+                    if scene_handler.type_creature == creature.type_creature {
                         debug!(
                             "  > scene_handler trouvé pour {:#?}",
                             scene_handler.type_creature
                         );
 
                         if let Ok(mut player) = query_player.get_mut(animation_link.get()) {
-                            let mut event_index =event.index;
+                            let (duration, animation) =
+                                scene_handler.vec_animations.get_pair(event.index).unwrap();
 
-                            let mut duration = &0.0;
-                            let mut animation = &bevy::asset::Handle::default();
-
-                            if creature.type_creature != TypeCreature::SkellyFullBody {
-                                /*
-                                    Big hack, but not time to make it reasonable
-
-                                    IdleIndex for NonFullBody is 0
-                                    For FullBody, it is SkellyAnimationId::Idle == 1
-
-                                    But need to set creature.current_animation_index to SkellyAnimationId::Idle
-                                    because I coded it like that..
-                                 */
-                                warn!("Found and block to 0 !");
-                                event_index = SkellyAnimationId::Idle as usize;
-
-                                // god now I'm struggling with rust, help me
-                                let a =
-                                    scene_handler.vec_animations.get_pair(0).unwrap();
-                                duration = &a.0;
-                                animation = &a.1;
-                            } else {
-                                let a  =
-                                    scene_handler.vec_animations.get_pair(event_index).unwrap();
-                                duration = &a.0;
-                                animation = &a.1;
-                            }
-                            creature.current_animation_index.0 = event_index;
-
+                            creature.current_animation_index.0 = event.index;
                             if event.repeat {
                                 player.play(animation.clone_weak()).repeat();
                                 debug!("Playing repeat!");
@@ -294,7 +260,7 @@ fn update_animation(
 
                             for mut stopwatch in query_stopwatch.iter_mut() {
                                 if stopwatch.creature_entity_id == entity.id() {
-                                    stopwatch.index_animation = event_index;
+                                    stopwatch.index_animation = event.index;
                                     stopwatch
                                         .time
                                         .set_duration(Duration::from_secs_f32(*duration));
@@ -357,13 +323,11 @@ fn checker_animation_duration(
             debug!("Timer finished for entity {}", stopwatch.creature_entity_id);
             stopwatch.reset_timer(); // en attendant que update_animation vienne faire le travail
 
-            let index_animation = stopwatch.index_animation;
-
             for (entity, creature) in query_entity.iter() {
                 if entity.id() == stopwatch.creature_entity_id {
                     creature.update_animation(
                         stopwatch.creature_entity_id,
-                        index_animation,
+                        stopwatch.index_animation,
                         event_writer.borrow_mut(),
                     );
                 }
@@ -378,7 +342,10 @@ fn add_animation(
     mut commands: Commands,
 ) {
     for event in events.iter() {
-        debug!("AddAnimation: {:#?}", event.scene_handler);
+        debug!(
+            "AddAnimation: {:?} pour {:?}",
+            event.scene_handler.creature_entity_id, event.scene_handler.type_creature
+        );
 
         vec_scene_handlers.0.push(event.scene_handler.clone());
 
@@ -391,7 +358,6 @@ fn add_animation(
         }
     }
 }
-
 
 /// Ajoute une stopwatch au World.
 /// Les stopwatch gardent le temps actuel de l'animation en cours pour une créature

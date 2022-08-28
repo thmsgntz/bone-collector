@@ -1,11 +1,14 @@
 use crate::animations_handler::{spawn_animation_stop_watch, VecSceneHandle};
-use crate::creatures::{BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG, SceneModelState};
+use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
+use crate::creatures::{
+    BoneTag, Creature, CurrentAnimationIndex, SceneModelState, TypeCreature, GLTF_PATH_ARM,
+    GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
+};
 use crate::inventory::{Inventory, Pickupable};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use std::borrow::BorrowMut;
-use crate::creatures::SceneModelState::{FullBody, OnlyHead};
 
 pub struct BonePlugin;
 impl Plugin for BonePlugin {
@@ -85,7 +88,7 @@ fn helper_load_asset(
         vec_animations: hm_animations,
         creature_entity_id: None,
         type_creature,
-        activated:true,
+        activated: true,
     };
 
     event_writer.send(AddAnimation {
@@ -108,10 +111,12 @@ fn keyboard_spawn_bone_part(
                 app_state.set(OnlyHead).expect("Already in State gros");
             }
             OnlyHead => {
+                app_state.set(HalfBody).expect("Already in State gros");
+            }
+            HalfBody => {
                 app_state.set(FullBody).expect("Already in State gros");
             }
         }
-
         keyboard_input.reset(KeyCode::C);
     }
 
@@ -195,7 +200,7 @@ fn spawn_part(
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.7)),
                     ..default()
                 },
-                _ => {Transform::default()}
+                _ => Transform::default(),
             };
 
             let entity_id = commands

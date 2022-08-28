@@ -13,7 +13,6 @@ use crate::creatures::skelly::SkellyAnimationId;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
-
 /*
 TODO:
  - le fun vient de se passer dans creature::update_player_model. Refacto
@@ -21,8 +20,6 @@ TODO:
  - Problème de texture de la head ??
  - Si pas de (gros) problèmes bloquants, on roule pour la suite
  */
-
-
 
 mod settings {
     use bevy::window::WindowMode;
