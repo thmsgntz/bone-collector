@@ -86,7 +86,7 @@ fn main() {
 
         /* Rapier */
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        //.add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
 
         /* My stuff */
         .add_plugin(map::MapPlugin)

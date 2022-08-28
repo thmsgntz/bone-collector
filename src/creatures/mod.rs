@@ -8,6 +8,8 @@ use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
 use crate::{directions, SceneHandle};
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Velocity;
+use crate::camera::ShiftFromPlayer;
+use crate::map::{I_SHIFT, J_SHIFT};
 
 mod bone_parts;
 pub(crate) mod skelly;
@@ -68,12 +70,13 @@ pub struct CreaturePlugin;
 impl Plugin for CreaturePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(bone_parts::BonePlugin)
-            .add_state(FullBody)
+            .add_state(OnlyHead)
             .add_system_set(SystemSet::on_exit(OnlyHead).with_system(update_player_model))
             .add_system_set(SystemSet::on_exit(FullBody).with_system(update_player_model))
             .add_system_set(SystemSet::on_exit(HalfBody).with_system(update_player_model))
             .add_startup_system(spawn_skelly)
             .add_system(keyboard_control)
+            .add_system_to_stage(CoreStage::First, check_falling_player)
             .add_system(cleanup_creature);
     }
 }
@@ -111,7 +114,7 @@ impl CurrentAnimationIndex {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 pub enum TypeCreature {
     SkellyFullBody,
     SkellyOnlyHead,
@@ -148,12 +151,35 @@ impl Creature {
                 Skelly::update_animation(target, index_animation, event_writer);
             }
             _ => {
-                info!("Sending Idle from update_animation");
                 event_writer.send(ChangeAnimation {
                     target,
                     index: 0,
                     repeat: true,
                 });
+            }
+        }
+    }
+}
+
+fn check_falling_player (
+    mut player_query: Query<(&mut Transform, &mut Velocity), With<Player>>,
+    shift_value: Res<ShiftFromPlayer>,
+    mut query_camera: Query<&mut Transform, (With<Camera3d>, Without<Player>)>,
+) {
+    if let Ok((mut player_transform, mut velocity)) = player_query.get_single_mut() {
+        if player_transform.translation.y < -2.0 {
+            info!("Falling");
+            let starting_position = 7.0 * I_SHIFT + 7.0 * J_SHIFT;
+            player_transform.translation = Vec3::new(starting_position.x, 2.0, starting_position.z);
+            velocity.linvel = Vec3::ZERO;
+            if let Ok(mut camera_transform) = query_camera.get_single_mut() {
+                let shift = shift_value.0;
+                *camera_transform = Transform::from_xyz(
+                    player_transform.translation.x - shift,
+                    camera_transform.translation.y,
+                    player_transform.translation.z - shift,
+                )
+                    .looking_at(player_transform.translation, Vec3::Y);
             }
         }
     }
@@ -174,7 +200,7 @@ fn send_new_animation(
 
 fn keyboard_control(
     event_writer: EventWriter<ChangeAnimation>,
-    keyboard_input: Res<Input<KeyCode>>,
+    mut keyboard_input: ResMut<Input<KeyCode>>,
     mut query_player: Query<(Entity, &mut Transform, &mut Velocity, &mut Creature), With<Player>>,
 ) {
     let mut vector_direction = Vec3::ZERO;
@@ -203,6 +229,11 @@ fn keyboard_control(
     if let Ok((entity, mut player_transform, mut player_velocity, mut player_creature)) =
         query_player.get_single_mut()
     {
+        if player_transform.translation.y < -2.0 || player_transform.translation.y > 1.0 {
+            keyboard_input.reset_all();
+            return
+        }
+
         let idle_index = SkellyAnimationId::Idle as usize;
 
         // Returns if vector_direction is 0

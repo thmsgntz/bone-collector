@@ -9,6 +9,7 @@ use crate::directions;
 use crate::inventory::Inventory;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use crate::map::{I_SHIFT, J_SHIFT};
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
@@ -115,8 +116,8 @@ impl CreatureTrait for Skelly {
         asset_server: Res<AssetServer>,
         mut event_writer: EventWriter<AddAnimation>,
     ) {
-        let i_shift = Vec3::new(-2.8, 0.0, 2.9);
-        let j_shift = Vec3::new(2.9, 0.0, 2.8);
+        let i_shift = I_SHIFT;
+        let j_shift = J_SHIFT;
         let starting_position = 7.0 * i_shift + 7.0 * j_shift;
 
         // let mut skelly_scene_handle = setup_skelly(&asset_server, "models/skeleton/scene.gltf");
@@ -141,13 +142,26 @@ impl CreatureTrait for Skelly {
                 },
                 ..default()
             })
+            //.with_children(|parent| {
+            //    parent
+            //        .spawn_bundle(SceneBundle {
+            //            scene: full_body_scene_handle.handle.clone(),
+            //            transform: Transform {
+            //                translation: Default::default(),
+            //                rotation: Default::default(),
+            //                scale: Vec3::ONE * 0.6,
+            //            },
+            //            ..default()
+            //        })
+            //        .insert(TagPlayerScene);
+            // })
             .with_children(|parent| {
                 parent
                     .spawn_bundle(SceneBundle {
-                        scene: full_body_scene_handle.handle.clone(),
+                        scene: head_scene_handle.handle.clone(),
                         transform: Transform {
-                            translation: Default::default(),
-                            rotation: Default::default(),
+                            translation: Vec3::new(0.0, -0.5, 0.0),
+                            rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.0)),
                             scale: Vec3::ONE * 0.6,
                         },
                         ..default()
@@ -181,7 +195,8 @@ impl CreatureTrait for Skelly {
                 angvel: Vec3::new(0.0, 0.0, 0.0),
             })
             .insert(Creature {
-                type_creature: TypeCreature::SkellyFullBody,
+                //type_creature: TypeCreature::SkellyFullBody,
+                type_creature: TypeCreature::SkellyOnlyHead,
                 direction: directions::Direction::Up,
                 direction_vec3: directions::Direction::Up.get_vec3(),
                 current_animation_index: CurrentAnimationIndex::from(
@@ -197,15 +212,13 @@ impl CreatureTrait for Skelly {
         full_body_scene_handle.creature_entity_id = Some(skelly_id.id());
 
         half_scene_handle.creature_entity_id = Some(skelly_id.id());
-        half_scene_handle.activated = false;
 
         head_scene_handle.creature_entity_id = Some(skelly_id.id());
-        head_scene_handle.activated = false;
 
         event_writer.send(AddAnimation {
             scene_handler: head_scene_handle.clone(),
             target: Some(skelly_id.id()),
-            start_animation: false,
+            start_animation: true,
         });
 
         event_writer.send(AddAnimation {
@@ -217,7 +230,7 @@ impl CreatureTrait for Skelly {
         event_writer.send(AddAnimation {
             scene_handler: full_body_scene_handle.clone(),
             target: Some(skelly_id.id()),
-            start_animation: true,
+            start_animation: false,
         });
 
         // Insert vector of pointers, to have access to these 3 models all the time easily

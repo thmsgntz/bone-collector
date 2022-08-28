@@ -5,17 +5,152 @@ use crate::creatures::{
     GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
 use crate::inventory::{Inventory, Pickupable};
+use crate::map::{I_SHIFT, J_SHIFT};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use std::borrow::BorrowMut;
+use std::borrow::{Borrow, BorrowMut};
+
+static GLTF_PATH_PACK_BONES: &str = "models/stack_bones/low_poly_bone_pile.glb#Scene0";
 
 pub struct BonePlugin;
 impl Plugin for BonePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(load_asset_parts)
-            .add_system(keyboard_spawn_bone_part);
+            .add_startup_system(spawn_pack_bones)
+            .add_system(keyboard_spawn_bone_part)
+            .add_system_to_stage(CoreStage::PostUpdate, update_sensor_bonepack);
     }
+}
+
+#[derive(Component)]
+struct TagPackBone;
+
+#[derive(Debug, Component)]
+struct BonePack {
+    consumed: bool,
+    position: Vec3,
+    items: Vec<TypeCreature>,
+}
+
+fn spawn_pack_bones(asset_server: Res<AssetServer>, mut commands: Commands) {
+    let i_shift = I_SHIFT;
+    let j_shift = J_SHIFT;
+    let position = 10.0 * i_shift + 7.0 * j_shift;
+    let pack_handle = asset_server.load(GLTF_PATH_PACK_BONES);
+
+    let bonepack = BonePack {
+        consumed: false,
+        position,
+        items: vec![
+            TypeCreature::Arm,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+    };
+
+    generate_one_pack(commands.borrow_mut(), bonepack, position, pack_handle);
+}
+
+fn generate_one_pack(
+    commands: &mut Commands,
+    bonepack: BonePack,
+    position: Vec3,
+    handle: Handle<Scene>,
+) {
+    commands
+        .spawn_bundle(PbrBundle {
+            transform: Transform::from_xyz(position.x, 0.0, position.z),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn_bundle(SceneBundle {
+                scene: handle.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0.0, 0.0, 0.0),
+                    rotation: Default::default(),
+                    scale: Vec3::ONE * 0.02,
+                },
+                ..default()
+            });
+        })
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(PbrBundle {
+                    transform: Transform {
+                        translation: Vec3::new(-0.6, 1.0, -0.5),
+                        rotation: Default::default(),
+                        scale: Vec3::ONE,
+                    },
+                    ..default()
+                })
+                .insert(Collider::cone(0.05, 1.0))
+                .insert(Sensor)
+            //.insert(Sensor)
+            ;
+        })
+        .insert(TagPackBone)
+        .insert(bonepack);
+}
+
+fn update_sensor_bonepack(
+    parent_query: Query<&Parent>,
+    mut query_bone: Query<&mut BonePack, With<TagPackBone>>,
+    mut command: Commands,
+    mut collision_events: EventReader<CollisionEvent>,
+
+    vec_scene_handlers: Res<VecSceneHandle>,
+) {
+    for collision_event in collision_events.iter() {
+        if let CollisionEvent::Started(child_A, child_B, _) = collision_event {
+            for entity in [child_A, child_B] {
+                if let Ok(parent) = parent_query.get(*entity) {
+                    if let Ok(mut bonepack) = query_bone.get_mut(parent.get()) {
+                        spawn_parts_from_pack(
+                            command.borrow_mut(),
+                            &mut bonepack,
+                            &vec_scene_handlers,
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn spawn_parts_from_pack(
+    commands: &mut Commands,
+    mut bonepack: &mut BonePack,
+    vec_scene_handlers: &Res<VecSceneHandle>,
+) {
+    if bonepack.consumed {
+        return;
+    }
+
+    let pack_position = bonepack.position;
+
+    let relative_positon = [
+        Vec3::new(2.9, 0.0, 2.8) / 2.0,
+        Vec3::new(-2.9, 0.0, 2.8) / 2.0,
+        Vec3::new(2.9, 0.0, -2.8) / 2.0,
+        Vec3::new(-2.9, 0.0, 2.8) / 2.0,
+    ];
+
+    let mut index = 0;
+
+    for creature in &bonepack.items {
+        spawn_part(
+            commands,
+            &vec_scene_handlers,
+            pack_position + relative_positon[index],
+            *creature,
+        );
+        index = (index + 1) % 4;
+    }
+
+    bonepack.consumed = true;
 }
 
 /// Loads assets
@@ -63,8 +198,6 @@ fn load_asset_parts(
         let shift_rotation = (part_transform.rotation.to_axis_angle().1 + 0.05);
         info!("{} {} {}", part_transform.rotation, (shift_rotation), Quat::from_rotation_y(shift_rotation));
         part_transform.rotation = Quat::from_rotation_y(shift_rotation);
-
-        //todo : add translation y ^ v
     }
 }*/
 
@@ -227,14 +360,13 @@ fn spawn_part(
                         })
                         .insert(Collider::ball(0.25));
                 })
+                .insert(BoneTag)
                 .insert(RigidBody::KinematicVelocityBased)
                 .insert(Velocity {
                     linvel: Default::default(),
                     angvel: Vec3::new(0.0, 1.0, 0.0),
                 })
                 .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
-                .insert(BoneTag)
-                .insert(Pickupable)
                 .insert(Creature {
                     type_creature: type_creature.clone(),
                     direction: directions::Direction::Up,

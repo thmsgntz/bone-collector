@@ -22,7 +22,8 @@ impl Plugin for InventoryPlugin {
         app.register_inspectable::<Inventory>()
             .add_startup_system(ui::setup_ui)
             .add_system(update_inventory_text)
-            .add_system_to_stage(CoreStage::PostUpdate, update_inventory_on_pickup);
+            .add_system_to_stage(CoreStage::PostUpdate, update_inventory_on_pickup)
+        ;
     }
 }
 
@@ -138,18 +139,21 @@ fn update_inventory_on_pickup(
     for collision_event in collision_events.iter() {
         if let CollisionEvent::Started(_skelly_child, entity_bone_child, _) = collision_event {
             // despawn bone (need parent because collider is inside child)
-            if let Ok(entity_bone) = parent_query.get(*entity_bone_child) {
-                if let Ok(bone_creature) = query_bone.get(entity_bone.get()) {
-                    command.entity(entity_bone.get()).insert(ToDespawn);
 
-                    // Add bone to inventory count
-                    if let Ok(mut inventory) = query_inventory.get_single_mut() {
-                        match bone_creature.type_creature {
-                            TypeCreature::Chest => inventory.add_chest(1),
-                            TypeCreature::Leg => inventory.add_legs(1),
-                            TypeCreature::Bone => inventory.add_bone(1),
-                            TypeCreature::Arm => inventory.add_arms(1),
-                            _ => {}
+            for entity in [_skelly_child, entity_bone_child] {
+                if let Ok(entity_bone) = parent_query.get(*entity) {
+                    if let Ok(bone_creature) = query_bone.get(entity_bone.get()) {
+                        command.entity(entity_bone.get()).insert(ToDespawn);
+
+                        // Add bone to inventory count
+                        if let Ok(mut inventory) = query_inventory.get_single_mut() {
+                            match bone_creature.type_creature {
+                                TypeCreature::Chest => inventory.add_chest(1),
+                                TypeCreature::Leg => inventory.add_legs(1),
+                                TypeCreature::Bone => inventory.add_bone(1),
+                                TypeCreature::Arm => inventory.add_arms(1),
+                                _ => {}
+                            }
                         }
                     }
                 }

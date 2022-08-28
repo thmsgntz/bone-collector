@@ -4,6 +4,9 @@ use std::borrow::BorrowMut;
 
 static PATH_GLTF_FLOOR: &str = "models/floor/floor_material.gltf#Scene0";
 
+pub(crate) const I_SHIFT: Vec3 = Vec3::new(-2.8, 0.0, 2.9);
+pub(crate) const J_SHIFT: Vec3 = Vec3::new(2.9, 0.0, 2.8);
+
 pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
@@ -84,8 +87,8 @@ fn generate_room_4(command: &mut Commands, handle_floor: Handle<Scene>) {
 }
 
 fn generate_one_tile(command: &mut Commands, handle_floor: Handle<Scene>, i: f32, j: f32) {
-    let i_shift = Vec3::new(-2.8, 0.0, 2.9);
-    let j_shift = Vec3::new(2.9, 0.0, 2.8);
+    let i_shift = I_SHIFT;
+    let j_shift = J_SHIFT;
     let transform = (i_shift * i) + (j_shift * j);
 
     let size = 4.35;
@@ -115,5 +118,5 @@ fn generate_one_tile(command: &mut Commands, handle_floor: Handle<Scene>, i: f32
                 })
                 .insert(Collider::cuboid(size / 2.0, 0.1, size / 2.0));
         })
-        .insert(RigidBody::Fixed);
+        .insert(RigidBody::Fixed);;
 }
