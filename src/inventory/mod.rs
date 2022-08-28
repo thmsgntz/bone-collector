@@ -22,8 +22,7 @@ impl Plugin for InventoryPlugin {
         app.register_inspectable::<Inventory>()
             .add_startup_system(ui::setup_ui)
             .add_system(update_inventory_text)
-            .add_system_to_stage(CoreStage::PostUpdate, update_inventory_on_pickup)
-        ;
+            .add_system_to_stage(CoreStage::PostUpdate, update_inventory_on_pickup);
     }
 }
 

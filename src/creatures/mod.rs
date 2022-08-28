@@ -4,12 +4,12 @@ use crate::animations_handler::{
 use crate::creatures::skelly::{Skelly, SkellyAnimationId};
 use bevy::math::vec3;
 
+use crate::camera::ShiftFromPlayer;
 use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
+use crate::map::{I_SHIFT, J_SHIFT};
 use crate::{directions, SceneHandle};
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Velocity;
-use crate::camera::ShiftFromPlayer;
-use crate::map::{I_SHIFT, J_SHIFT};
 
 mod bone_parts;
 pub(crate) mod skelly;
@@ -161,7 +161,7 @@ impl Creature {
     }
 }
 
-fn check_falling_player (
+fn check_falling_player(
     mut player_query: Query<(&mut Transform, &mut Velocity), With<Player>>,
     shift_value: Res<ShiftFromPlayer>,
     mut query_camera: Query<&mut Transform, (With<Camera3d>, Without<Player>)>,
@@ -179,7 +179,7 @@ fn check_falling_player (
                     camera_transform.translation.y,
                     player_transform.translation.z - shift,
                 )
-                    .looking_at(player_transform.translation, Vec3::Y);
+                .looking_at(player_transform.translation, Vec3::Y);
             }
         }
     }
@@ -231,7 +231,7 @@ fn keyboard_control(
     {
         if player_transform.translation.y < -2.0 || player_transform.translation.y > 1.0 {
             keyboard_input.reset_all();
-            return
+            return;
         }
 
         let idle_index = SkellyAnimationId::Idle as usize;

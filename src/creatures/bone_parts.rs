@@ -4,12 +4,12 @@ use crate::creatures::{
     BoneTag, Creature, CurrentAnimationIndex, SceneModelState, TypeCreature, GLTF_PATH_ARM,
     GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
-use crate::inventory::{Inventory, Pickupable};
+use crate::inventory::Inventory;
 use crate::map::{I_SHIFT, J_SHIFT};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 
 static GLTF_PATH_PACK_BONES: &str = "models/stack_bones/low_poly_bone_pile.glb#Scene0";
 
@@ -104,8 +104,8 @@ fn update_sensor_bonepack(
     vec_scene_handlers: Res<VecSceneHandle>,
 ) {
     for collision_event in collision_events.iter() {
-        if let CollisionEvent::Started(child_A, child_B, _) = collision_event {
-            for entity in [child_A, child_B] {
+        if let CollisionEvent::Started(child_a, child_b, _) = collision_event {
+            for entity in [child_a, child_b] {
                 if let Ok(parent) = parent_query.get(*entity) {
                     if let Ok(mut bonepack) = query_bone.get_mut(parent.get()) {
                         spawn_parts_from_pack(
@@ -143,7 +143,7 @@ fn spawn_parts_from_pack(
     for creature in &bonepack.items {
         spawn_part(
             commands,
-            &vec_scene_handlers,
+            vec_scene_handlers,
             pack_position + relative_positon[index],
             *creature,
         );
@@ -368,7 +368,7 @@ fn spawn_part(
                 })
                 .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
                 .insert(Creature {
-                    type_creature: type_creature.clone(),
+                    type_creature,
                     direction: directions::Direction::Up,
                     direction_vec3: Default::default(),
                     current_animation_index: CurrentAnimationIndex(0),

@@ -118,5 +118,5 @@ fn generate_one_tile(command: &mut Commands, handle_floor: Handle<Scene>, i: f32
                 })
                 .insert(Collider::cuboid(size / 2.0, 0.1, size / 2.0));
         })
-        .insert(RigidBody::Fixed);;
+        .insert(RigidBody::Fixed);
 }

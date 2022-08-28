@@ -7,9 +7,9 @@ use crate::creatures::{
 };
 use crate::directions;
 use crate::inventory::Inventory;
+use crate::map::{I_SHIFT, J_SHIFT};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use crate::map::{I_SHIFT, J_SHIFT};
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub(crate) enum SkellyAnimationId {
