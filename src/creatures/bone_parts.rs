@@ -170,7 +170,6 @@ fn spawn_part(
         if scene_handlers.type_creature == type_creature {
             // Adjusting the loaded scene
             let adjusted_transform = match type_creature {
-                TypeCreature::Skelly => Transform::default(),
                 TypeCreature::Chest => Transform {
                     translation: Vec3::new(0.0, 0.0, 0.7),
                     rotation: Quat::from_scaled_axis(Vec3::new(-1.0, 0.0, 0.0)),
@@ -196,6 +195,7 @@ fn spawn_part(
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.7)),
                     ..default()
                 },
+                _ => {Transform::default()}
             };
 
             let entity_id = commands
