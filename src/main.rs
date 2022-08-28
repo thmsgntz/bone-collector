@@ -4,6 +4,7 @@ mod creatures;
 mod directions;
 mod inventory;
 mod map;
+mod ui_text;
 
 use bevy::log::LogSettings;
 use bevy::prelude::*;
@@ -13,6 +14,14 @@ use crate::animations_handler::{AddAnimation, HashMapAnimationClip, SceneHandle}
 use crate::creatures::skelly::SkellyAnimationId;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
+
+/*
+   TODO:
+       - Placer les pack bones
+       - Faire un système qui check le nombre de bones et update le model automatiquement
+       - Retirer la porte avec fullbody
+       - Sensor dans la dernière salle et message de victoire
+*/
 
 mod settings {
     use bevy::window::WindowMode;
@@ -86,7 +95,7 @@ fn main() {
 
         /* Rapier */
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        //.add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
 
         /* My stuff */
         .add_plugin(map::MapPlugin)
@@ -94,6 +103,7 @@ fn main() {
         .add_plugin(animations_handler::AnimationHandler)
         .add_plugin(creatures::CreaturePlugin)
         .add_plugin(inventory::InventoryPlugin)
+        .add_plugin(ui_text::UiTextPlugin)
         .add_startup_system(setup_light)
 
         .run();

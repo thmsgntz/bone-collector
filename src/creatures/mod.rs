@@ -267,11 +267,12 @@ fn keyboard_control(
         // Update rotation
         let direction = directions::map_vec3_to_direction(vector_direction).unwrap();
         let qu = Quat::from_rotation_y(direction.get_angle());
-        let rotation = if player_transform.rotation.angle_between(qu).abs() > 3.0 {
-            qu
-        } else {
-            player_transform.rotation.lerp(qu, 0.1)
-        };
+        //let rotation = if player_transform.rotation.angle_between(qu).abs() > 3.0 {
+        //    qu
+        //} else {
+        //    player_transform.rotation.lerp(qu, 0.1)
+        //};
+        let rotation = player_transform.rotation.lerp(qu, 0.1);
         player_transform.rotation = rotation;
 
         if player_creature.current_animation_index.0 != SkellyAnimationId::Walk as usize
