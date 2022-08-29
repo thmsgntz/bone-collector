@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 use bevy_rapier3d::prelude::CollisionEvent;
 
-pub const STARTING_NB_BONES: usize = 9;
+pub const STARTING_NB_BONES: usize = 0;
 pub const STARTING_NB_CHEST: usize = 0;
 pub const STARTING_NB_ARM: usize = 0;
 pub const STARTING_NB_LEG: usize = 0;
@@ -170,7 +170,7 @@ impl Default for Inventory {
 }
 
 /// Update inventory text on update (+ or - items)
-/// Could make Changed<T> occurs on InventoryEntry.. so I had to query the whole Inventory
+/// Could not make Changed<T> occurs on InventoryEntry.. so I had to query the whole Inventory
 fn update_inventory_text(
     mut query_text: Query<(&mut Text, &InventoryTextTag)>,
     query_item: Query<&Inventory, Changed<Inventory>>,

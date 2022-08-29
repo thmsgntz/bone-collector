@@ -18,13 +18,9 @@ pub(crate) mod skelly;
 #[derive(Component)]
 pub(crate) struct BoneTag;
 
-// const ENTITY_SPEED: f32 = 2.0;
-// const ENTITY_SPEED_ROTATION: f32 = 0.1;
-
 pub static GLTF_PATH_FULL_BODY: &str = "models/full_body/scene.gltf";
 pub static GLTF_PATH_HALF_BODY: &str = "models/half/half_body.gltf";
 pub static GLTF_PATH_CHEST: &str = "models/chest/chest.gltf";
-//pub static GLTF_PATH_HEAD_OLD: &str = "models/head/head.gltf";
 pub static GLTF_PATH_HEAD: &str = "models/head/head_with_animation.gltf";
 pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
 pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
@@ -34,7 +30,7 @@ pub const BONES_NEEDED_HALF_BODY: usize = 10;
 pub const CHEST_NEEDED_HALF_BODY: usize = 1;
 pub const LEGS_NEEDED_HALF_BODY: usize = 2;
 
-pub const BONES_NEEDED_FULL_BODY: usize = 13;
+pub const BONES_NEEDED_FULL_BODY: usize = 45;
 pub const CHEST_NEEDED_FULL_BODY: usize = 1;
 pub const ARMS_NEEDED_FULL_BODY: usize = 2;
 pub const LEGS_NEEDED_FULL_BODY: usize = 2;
@@ -215,7 +211,7 @@ fn keyboard_control(
     let mut vector_direction = Vec3::ZERO;
     let mut is_shift = 0.0;
 
-    if keyboard_input.pressed(KeyCode::Z) {
+    if keyboard_input.pressed(KeyCode::Z) || keyboard_input.pressed(KeyCode::W) {
         vector_direction += Vec3::new(1.0, 0.0, 1.0);
     }
 
@@ -227,7 +223,7 @@ fn keyboard_control(
         vector_direction += Vec3::new(-1.0, 0.0, -1.0);
     }
 
-    if keyboard_input.pressed(KeyCode::Q) {
+    if keyboard_input.pressed(KeyCode::Q) || keyboard_input.pressed(KeyCode::A) {
         vector_direction += Vec3::new(1.0, 0.0, -1.0);
     }
 
@@ -243,11 +239,17 @@ fn keyboard_control(
             return;
         }
 
+        if player_creature.type_creature == TypeCreature::SkellyOnlyHead {
+            is_shift = 0.0;
+        }
+
         let idle_index = SkellyAnimationId::Idle as usize;
 
         // Returns if vector_direction is 0
         if vector_direction == Vec3::ZERO {
-            if player_creature.current_animation_index == SkellyAnimationId::Walk {
+            if player_creature.current_animation_index == SkellyAnimationId::Walk
+                || player_creature.current_animation_index == SkellyAnimationId::Run
+            {
                 send_new_animation(entity.id(), idle_index, true, event_writer);
             }
 
@@ -284,16 +286,32 @@ fn keyboard_control(
         let rotation = player_transform.rotation.lerp(qu, 0.1);
         player_transform.rotation = rotation;
 
-        if player_creature.current_animation_index.0 != SkellyAnimationId::Walk as usize
-            && (player_creature.type_creature == TypeCreature::SkellyFullBody
-                || player_creature.type_creature == TypeCreature::SkellyHalf)
+        // no running animation when only head
+        if player_creature.type_creature == TypeCreature::SkellyOnlyHead {
+            return;
+        }
+
+        let moving_animation = if is_shift >= 1.0 {
+            SkellyAnimationId::Run as usize
+        } else {
+            SkellyAnimationId::Walk as usize
+        };
+
+        // no need to update animation
+        if moving_animation as usize == player_creature.current_animation_index.0 {
+            return;
+        }
+
+        // do we need to update animation? depends it was already walking/running and if pressing shift
+        // I think this can be easily less complicated, but no time
+        if (player_creature.current_animation_index.0 != SkellyAnimationId::Run as usize
+            && player_creature.current_animation_index.0 != SkellyAnimationId::Walk as usize)
+            || (player_creature.current_animation_index.0 == SkellyAnimationId::Run as usize
+                && moving_animation == SkellyAnimationId::Walk as usize)
+            || (player_creature.current_animation_index.0 == SkellyAnimationId::Walk as usize
+                && moving_animation == SkellyAnimationId::Run as usize)
         {
-            send_new_animation(
-                entity.id(),
-                SkellyAnimationId::Walk as usize,
-                true,
-                event_writer,
-            );
+            send_new_animation(entity.id(), moving_animation, true, event_writer);
         }
     }
 }
@@ -306,8 +324,6 @@ fn update_player_model(
     mut query_player: Query<(Entity, &AnimationEntityLink, &mut Creature), With<Player>>,
     mut query_stopwatch: Query<&mut AnimationStopWatch>,
 ) {
-    info!("Bonjour");
-
     if let Ok(child_scene) = query_child_scene.get_single_mut() {
         if let Ok((player_entity, animation_player, mut creature)) = query_player.get_single_mut() {
             info!("Child found {:?}", child_scene);

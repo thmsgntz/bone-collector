@@ -1,10 +1,8 @@
 use crate::animations_handler::{spawn_animation_stop_watch, VecSceneHandle};
-use crate::creatures::SceneModelState::{FullBody, HalfBody, OnlyHead};
 use crate::creatures::{
-    BoneTag, Creature, CurrentAnimationIndex, SceneModelState, TypeCreature, GLTF_PATH_ARM,
-    GLTF_PATH_BONE, GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
+    BoneTag, Creature, CurrentAnimationIndex, TypeCreature, GLTF_PATH_ARM, GLTF_PATH_BONE,
+    GLTF_PATH_CHEST, GLTF_PATH_HEAD, GLTF_PATH_LEG,
 };
-use crate::inventory::Inventory;
 use crate::map::{I_SHIFT, J_SHIFT};
 use crate::{directions, AddAnimation, HashMapAnimationClip, SceneHandle, SkellyAnimationId};
 use bevy::prelude::*;
@@ -18,7 +16,6 @@ impl Plugin for BonePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(load_asset_parts)
             .add_startup_system(spawn_pack_bones)
-            .add_system(keyboard_spawn_bone_part)
             .add_system_to_stage(CoreStage::PostUpdate, update_sensor_bonepack);
     }
 }
@@ -40,28 +37,161 @@ fn spawn_pack_bones(asset_server: Res<AssetServer>, mut commands: Commands) {
         commands.borrow_mut(),
         vec![
             TypeCreature::Chest,
-            TypeCreature::Arm,
-            TypeCreature::Arm,
+            TypeCreature::Leg,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
             TypeCreature::Bone,
         ],
+        9.0,
         7.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        11.0,
         8.0,
         pack_handle.clone(),
     );
 
     generate_one_pack(
         commands.borrow_mut(),
-        vec![TypeCreature::Leg, TypeCreature::Leg],
-        6.0,
-        8.0,
+        vec![TypeCreature::Bone, TypeCreature::Leg],
+        11.0,
+        7.0,
         pack_handle.clone(),
     );
 
     generate_one_pack(
         commands.borrow_mut(),
         vec![TypeCreature::Bone, TypeCreature::Bone, TypeCreature::Bone],
-        8.0,
-        8.0,
+        13.0,
+        7.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        12.0,
+        4.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        12.0,
+        5.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        13.0,
+        4.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        13.0,
+        5.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![TypeCreature::Bone, TypeCreature::Bone],
+        11.0,
+        11.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Arm,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        14.0,
+        12.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Arm,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+            TypeCreature::Bone,
+        ],
+        14.0,
+        3.0,
         pack_handle,
     );
 }
@@ -247,72 +377,6 @@ fn helper_load_asset(
     });
 }
 
-fn keyboard_spawn_bone_part(
-    mut commands: Commands,
-    mut keyboard_input: ResMut<Input<KeyCode>>,
-    mut app_state: ResMut<State<SceneModelState>>,
-    mut query_inventory: Query<&mut Inventory>,
-    vec_scene_handlers: Res<VecSceneHandle>,
-) {
-    if keyboard_input.pressed(KeyCode::C) {
-        match app_state.current() {
-            FullBody => {
-                app_state.set(OnlyHead).expect("Already in State gros");
-            }
-            OnlyHead => {
-                app_state.set(HalfBody).expect("Already in State gros");
-            }
-            HalfBody => {
-                app_state.set(FullBody).expect("Already in State gros");
-            }
-        }
-        keyboard_input.reset(KeyCode::C);
-    }
-
-    if keyboard_input.pressed(KeyCode::B) {
-        // TODO: remove debug
-        let mut inventory = query_inventory.single_mut();
-        inventory.add_bone(5);
-
-        // B for bone
-        spawn_part(
-            commands.borrow_mut(),
-            &vec_scene_handlers,
-            Vec3::new(2.5, 0.0, 2.5),
-            TypeCreature::Bone,
-        );
-
-        spawn_part(
-            commands.borrow_mut(),
-            &vec_scene_handlers,
-            Vec3::new(-2.5, 0.0, -2.5),
-            TypeCreature::Leg,
-        );
-
-        spawn_part(
-            commands.borrow_mut(),
-            &vec_scene_handlers,
-            Vec3::new(-2.5, 0.0, 2.5),
-            TypeCreature::Arm,
-        );
-
-        spawn_part(
-            commands.borrow_mut(),
-            &vec_scene_handlers,
-            Vec3::new(2.5, 0.0, -2.5),
-            TypeCreature::Chest,
-        );
-
-        spawn_part(
-            commands.borrow_mut(),
-            &vec_scene_handlers,
-            Vec3::new(1.5, 0.0, -1.5),
-            TypeCreature::Head,
-        );
-        keyboard_input.reset(KeyCode::B);
-    }
-}
-
 /// Spawn the part with Commands and create a stopwatch
 fn spawn_part(
     commands: &mut Commands,
@@ -323,31 +387,32 @@ fn spawn_part(
     for scene_handlers in &vec_scene_handlers.0 {
         if scene_handlers.type_creature == type_creature {
             // Adjusting the loaded scene
+            let adjust_scale = Vec3::ONE * 1.25;
             let adjusted_transform = match type_creature {
                 TypeCreature::Chest => Transform {
                     translation: Vec3::new(0.0, 0.0, 0.7),
                     rotation: Quat::from_scaled_axis(Vec3::new(-1.0, 0.0, 0.0)),
-                    ..default()
+                    scale: adjust_scale,
                 },
                 TypeCreature::Head => Transform {
                     translation: Vec3::new(0.0, 0.0, -0.6),
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, -0.3)),
-                    ..default()
+                    scale: adjust_scale,
                 },
                 TypeCreature::Leg => Transform {
                     translation: Vec3::new(-0.4, 0.0, 0.0),
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, -0.3)),
-                    ..default()
+                    scale: adjust_scale,
                 },
                 TypeCreature::Bone => Transform {
                     translation: Vec3::new(-0.4, 0.0, -0.2),
                     rotation: Quat::from_scaled_axis(Vec3::new(0.4, 0.0, -0.5)),
-                    ..default()
+                    scale: adjust_scale,
                 },
                 TypeCreature::Arm => Transform {
                     translation: Vec3::new(0.9, 0.0, -0.4),
                     rotation: Quat::from_scaled_axis(Vec3::new(0.0, 0.0, 0.7)),
-                    ..default()
+                    scale: adjust_scale,
                 },
                 _ => Transform::default(),
             };

@@ -258,7 +258,7 @@ impl CreatureTrait for Skelly {
             SkellyAnimationId::Attack => {}
             SkellyAnimationId::Yell => {}
             SkellyAnimationId::Walk => return,
-            SkellyAnimationId::Run => {}
+            SkellyAnimationId::Run => return,
             SkellyAnimationId::Fall => {}
             SkellyAnimationId::Hit => {}
             SkellyAnimationId::Die => {}

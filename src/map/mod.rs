@@ -29,15 +29,16 @@ fn setup_level(mut commands: Commands, asset_server: Res<AssetServer>) {
     // BOT : Vec3::new(-2.9,0.0,-2.8)
     // LEFT : Vec3::new(2.8,0.0,-2.9)
 
-    generate_room_1(commands.borrow_mut(), handle_floor.clone());
+    //generate_room_1(commands.borrow_mut(), handle_floor.clone());
     generate_room_2(commands.borrow_mut(), handle_floor.clone());
-    generate_corridor_1(commands.borrow_mut(), handle_floor.clone());
+    //generate_corridor_1(commands.borrow_mut(), handle_floor.clone());
     generate_corridor_2(commands.borrow_mut(), handle_floor.clone());
     generate_corridor_3(commands.borrow_mut(), handle_floor.clone());
     generate_room_3(commands.borrow_mut(), handle_floor.clone());
     generate_room_4(commands.borrow_mut(), handle_floor);
 }
 
+#[allow(dead_code)]
 fn generate_room_1(command: &mut Commands, handle_floor: Handle<Scene>) {
     for i in 1..4 {
         for j in 0..14 {
@@ -46,6 +47,7 @@ fn generate_room_1(command: &mut Commands, handle_floor: Handle<Scene>) {
     }
 }
 
+#[allow(dead_code)]
 fn generate_corridor_1(command: &mut Commands, handle_floor: Handle<Scene>) {
     for i in 4..6 {
         for j in 7..9 {
