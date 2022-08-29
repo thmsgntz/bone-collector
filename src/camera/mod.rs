@@ -4,7 +4,7 @@ use bevy::{prelude::*, render::camera::ScalingMode};
 /// camera distance from the player
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
-pub(crate) struct ShiftFromPlayer(f32);
+pub(crate) struct ShiftFromPlayer(pub f32);
 
 pub(crate) struct CameraPlugin;
 impl Plugin for CameraPlugin {

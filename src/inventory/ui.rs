@@ -66,7 +66,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ),
                 ..default()
             },
-            color: UiColor(Color::rgba(0.0, 0.0, 0.0, 0.5)), // Todo : alpha = 255 quand terminé
+            color: UiColor(Color::rgba(0.0, 0.0, 0.0, 0.0)),
             ..default()
         })
         /* FIRST CADRE BONES */

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Hanging wall chains
+* source:	https://sketchfab.com/3d-models/hanging-wall-chains-97bc5d1699c94b619d0666f6eab79ea0
+* author:	Karyu (https://sketchfab.com/karyu.lucca)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Hanging wall chains" (https://sketchfab.com/3d-models/hanging-wall-chains-97bc5d1699c94b619d0666f6eab79ea0) by Karyu (https://sketchfab.com/karyu.lucca) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

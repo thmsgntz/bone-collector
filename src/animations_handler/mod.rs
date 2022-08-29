@@ -1,7 +1,7 @@
 use crate::creatures::{Creature, TypeCreature};
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_inspector_egui::Inspectable;
 use std::borrow::BorrowMut;
 use std::time::Duration;
 
@@ -9,7 +9,7 @@ pub struct AnimationHandler;
 impl Plugin for AnimationHandler {
     fn build(&self, app: &mut App) {
         app.insert_resource::<VecSceneHandle>(Default::default())
-            .register_inspectable::<AnimationEntityLink>()
+            //.register_inspectable::<AnimationEntityLink>()
             .add_event::<ChangeAnimation>()
             .add_event::<AddAnimation>()
             .add_event::<RemoveAnimation>()
@@ -191,7 +191,6 @@ fn link_animations(
                 animations_entity_link_query.get(skelly_entity).unwrap().0
             );
         } else {
-            warn!("Skelly {:?} / AnimationPlayer:{:?})", skelly_entity, entity);
             commands
                 .entity(skelly_entity)
                 .insert(AnimationEntityLink(entity));
