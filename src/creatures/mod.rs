@@ -30,6 +30,15 @@ pub static GLTF_PATH_LEG: &str = "models/leg/leg.gltf";
 pub static GLTF_PATH_BONE: &str = "models/bone/bone.gltf";
 pub static GLTF_PATH_ARM: &str = "models/arm/arm.gltf";
 
+pub const BONES_NEEDED_HALF_BODY: usize = 10;
+pub const CHEST_NEEDED_HALF_BODY: usize = 1;
+pub const LEGS_NEEDED_HALF_BODY: usize = 2;
+
+pub const BONES_NEEDED_FULL_BODY: usize = 13;
+pub const CHEST_NEEDED_FULL_BODY: usize = 1;
+pub const ARMS_NEEDED_FULL_BODY: usize = 2;
+pub const LEGS_NEEDED_FULL_BODY: usize = 2;
+
 pub trait CreatureTrait {
     fn spawn(
         commands: Commands,
@@ -60,7 +69,7 @@ pub(crate) struct Player;
 pub struct VecSkellyScenes(pub Vec<SceneHandle>);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub(crate) enum SceneModelState {
+pub enum SceneModelState {
     FullBody,
     HalfBody,
     OnlyHead,
@@ -321,14 +330,13 @@ fn update_player_model(
             let scene_half = &vec_scenes.0[1];
             let scene_head = &vec_scenes.0[2];
 
-            let mut index_animation = SkellyAnimationId::Spawn as usize;
+            let mut index_animation = SkellyAnimationId::None as usize;
 
             match scene_state.current() {
                 OnlyHead => {
                     // Désactive HEAD, active HALF
 
                     creature.type_creature = TypeCreature::SkellyHalf;
-                    creature.can_move = true;
 
                     // add new
                     command.entity(player_entity).with_children(|parent| {
@@ -348,7 +356,6 @@ fn update_player_model(
                 FullBody => {
                     // Désactive FULL_BODY, active HEAD
                     creature.type_creature = TypeCreature::SkellyOnlyHead;
-                    creature.can_move = true;
 
                     index_animation = SkellyAnimationId::Idle as usize;
 
@@ -370,7 +377,6 @@ fn update_player_model(
                 HalfBody => {
                     // DESACTIVATE HALF, ACTIVATE FULL
                     creature.type_creature = TypeCreature::SkellyFullBody;
-                    creature.can_move = true;
 
                     // add new
                     command.entity(player_entity).with_children(|parent| {

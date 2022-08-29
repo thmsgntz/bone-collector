@@ -263,11 +263,14 @@ impl CreatureTrait for Skelly {
             SkellyAnimationId::Hit => {}
             SkellyAnimationId::Die => {}
             SkellyAnimationId::Spawn => {
-                new_animation = SkellyAnimationId::Idle;
-                repeat = true;
+                new_animation = SkellyAnimationId::LookingAround;
+                repeat = false;
             }
             SkellyAnimationId::Hanged => {}
-            SkellyAnimationId::None => {}
+            SkellyAnimationId::None => {
+                new_animation = SkellyAnimationId::Spawn;
+                repeat = false;
+            }
         }
 
         event_writer.send(ChangeAnimation {

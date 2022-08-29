@@ -34,32 +34,53 @@ struct BonePack {
 }
 
 fn spawn_pack_bones(asset_server: Res<AssetServer>, mut commands: Commands) {
-    let i_shift = I_SHIFT;
-    let j_shift = J_SHIFT;
-    let position = 10.0 * i_shift + 7.0 * j_shift;
     let pack_handle = asset_server.load(GLTF_PATH_PACK_BONES);
 
-    let bonepack = BonePack {
-        consumed: false,
-        position,
-        items: vec![
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![
+            TypeCreature::Chest,
+            TypeCreature::Arm,
             TypeCreature::Arm,
             TypeCreature::Bone,
-            TypeCreature::Bone,
-            TypeCreature::Bone,
-            TypeCreature::Bone,
         ],
-    };
+        7.0,
+        8.0,
+        pack_handle.clone(),
+    );
 
-    generate_one_pack(commands.borrow_mut(), bonepack, position, pack_handle);
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![TypeCreature::Leg, TypeCreature::Leg],
+        6.0,
+        8.0,
+        pack_handle.clone(),
+    );
+
+    generate_one_pack(
+        commands.borrow_mut(),
+        vec![TypeCreature::Bone, TypeCreature::Bone, TypeCreature::Bone],
+        8.0,
+        8.0,
+        pack_handle,
+    );
 }
 
 fn generate_one_pack(
     commands: &mut Commands,
-    bonepack: BonePack,
-    position: Vec3,
+    items: Vec<TypeCreature>,
+    i: f32,
+    j: f32,
     handle: Handle<Scene>,
 ) {
+    let position = i * I_SHIFT + j * J_SHIFT;
+
+    let bonepack = BonePack {
+        consumed: false,
+        position,
+        items,
+    };
+
     commands
         .spawn_bundle(PbrBundle {
             transform: Transform::from_xyz(position.x, 0.0, position.z),
@@ -71,7 +92,7 @@ fn generate_one_pack(
                 transform: Transform {
                     translation: Vec3::new(0.0, 0.0, 0.0),
                     rotation: Default::default(),
-                    scale: Vec3::ONE * 0.02,
+                    scale: Vec3::ONE * 0.005 * bonepack.items.len() as f32,
                 },
                 ..default()
             });
@@ -131,12 +152,7 @@ fn spawn_parts_from_pack(
 
     let pack_position = bonepack.position;
 
-    let relative_positon = [
-        Vec3::new(2.9, 0.0, 2.8) / 2.0,
-        Vec3::new(-2.9, 0.0, 2.8) / 2.0,
-        Vec3::new(2.9, 0.0, -2.8) / 2.0,
-        Vec3::new(-2.9, 0.0, 2.8) / 2.0,
-    ];
+    let relative_positon = [J_SHIFT / 2.0, I_SHIFT / 2.0, -I_SHIFT / 2.0, -J_SHIFT / 2.0];
 
     let mut index = 0;
 

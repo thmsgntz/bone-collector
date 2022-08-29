@@ -10,7 +10,12 @@ impl Plugin for UiTextPlugin {
     fn build(&self, _app: &mut App) {}
 }
 
-pub fn display_text(commands: &mut Commands, asset_server: &Res<AssetServer>, text_value: &str) {
+pub fn display_text(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    text_value: &str,
+    color: Color,
+) {
     let handle_font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
     commands
@@ -38,7 +43,7 @@ pub fn display_text(commands: &mut Commands, asset_server: &Res<AssetServer>, te
                     TextStyle {
                         font: handle_font,
                         font_size: 25.0,
-                        color: Color::RED,
+                        color,
                     },
                 )
                 .with_style(Style {
