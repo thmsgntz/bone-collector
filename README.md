@@ -91,7 +91,6 @@ This is mostly for me but can be helpful :)
 Write something, test it and do not be afraid of making small steps. You'll figure it out when doing.
 - Do not be afraid of making small steps (it deserved its bullet point)
 - Abuse cargo clippy and reformat regularly, do not wait too long before cleaning stuff (can be hard in a rush like Jams)
-- 
 
 ## Credits
 
