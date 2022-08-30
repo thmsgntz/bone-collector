@@ -107,4 +107,7 @@ Write something, test it and do not be afraid of making small steps. You'll figu
 
 Logo has been generated with [MidJourney's AI](https://www.midjourney.com/home/).
 
+### Tutorials
+
+I've watched and used a lot of [Logic Projects](https://www.youtube.com/channel/UC7v3YEDa603x_84PgCPytzA)'s tutorial videos. Thank you if you're around :)
 
