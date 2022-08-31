@@ -22,7 +22,7 @@ I consider now to switch to a rust-focused job (but I wait a bit to see if this 
 The most important for me is that I finished a personal project, from beginning to end, and this is a first time for me.
 Even if at the end, the game is a five-minutes-long game, I am proud of it. 
 
-### Organizations
+### Planing
 
 I organized it like my work project, with Github's issues and milestone, because I know this is something that works for me.
 Having issues written in advance helped me stay focused and, moreover, helped me to avoid the pitfall: "oh I have an idea! what if I added this new fancy feature??".
